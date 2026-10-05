@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { @apply border-surface-border; }
+  body {
+    @apply bg-surface text-slate-800 font-sans antialiased;
+    font-feature-settings: "cv11", "salt";
+  }
+}
+
+@layer components {
+  /* Skeleton Loading */
+  .skeleton {
+    @apply bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200;
+    background-size: 200% 100%;
+    @apply animate-shimmer rounded;
+  }
+
+  /* Card base */
+  .card {
+    @apply bg-surface-elevated rounded-xl shadow-card border border-surface-border;
+  }
+
+  /* Status Badges */
+  .badge-green { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-status-green-light text-status-green; }
+  .badge-yellow { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-status-yellow-light text-status-yellow; }
+  .badge-red { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-status-red-light text-status-red; }
+  .badge-blue { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-status-blue-light text-status-blue; }
+  .badge-gray { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-status-gray-light text-status-gray; }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-kemenkum-navy text-white text-sm font-medium rounded-lg
+      hover:bg-kemenkum-navy-light transition-colors duration-150
+      focus:outline-none focus:ring-2 focus:ring-kemenkum-navy focus:ring-offset-2
+      disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-sm font-medium rounded-lg border border-surface-border
+      hover:bg-slate-50 transition-colors duration-150
+      focus:outline-none focus:ring-2 focus:ring-kemenkum-navy focus:ring-offset-2
+      disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-kemenkum-gold text-white text-sm font-medium rounded-lg
+      hover:bg-kemenkum-gold-light transition-colors duration-150
+      focus:outline-none focus:ring-2 focus:ring-kemenkum-gold focus:ring-offset-2;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg
+      hover:bg-red-700 transition-colors duration-150
+      focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+  }
+
+  /* Form Elements */
+  .form-input {
+    @apply block w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-slate-900
+      placeholder:text-slate-400 bg-white
+      focus:border-kemenkum-navy focus:ring-1 focus:ring-kemenkum-navy focus:outline-none
+      disabled:bg-slate-50 disabled:text-slate-500;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-slate-700 mb-1;
+  }
+
+  .form-select {
+    @apply form-input appearance-none bg-white pr-8;
+  }
+
+  /* Tables */
+  .table-container {
+    @apply overflow-x-auto rounded-xl border border-surface-border bg-white;
+  }
+
+  table.data-table {
+    @apply min-w-full divide-y divide-surface-border;
+  }
+
+  table.data-table thead tr {
+    @apply bg-slate-50;
+  }
+
+  table.data-table thead th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider;
+  }
+
+  table.data-table tbody tr {
+    @apply divide-y divide-surface-border hover:bg-slate-50/70 transition-colors duration-75;
+  }
+
+  table.data-table tbody td {
+    @apply px-4 py-3 text-sm text-slate-700;
+  }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 cursor-pointer;
+  }
+
+  .nav-item-active {
+    @apply bg-white/15 text-white font-semibold;
+  }
+
+  .nav-item-inactive {
+    @apply text-kemenkum-silver hover:bg-white/10 hover:text-white;
+  }
+}

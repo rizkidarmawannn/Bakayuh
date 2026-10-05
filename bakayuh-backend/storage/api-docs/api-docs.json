@@ -1,0 +1,2026 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "BAKAYUH REST API Documentation",
+        "description": "Dokumentasi Resmi REST API Sistem BAKAYUH (Sistem Terpadu E-Performance & E-RB) Kantor Wilayah Kementerian Hukum Kalimantan Selatan.\n\nSistem ini mencakup manajemen IKU (Perjanjian Kinerja), Rencana Aksi Triwulanan (Renaksi TW I - IV), Evaluasi SAKIP (4 Komponen), Instrumen LKE WBK/WBBM 2026, RKT RB (General, Tematik, Meso), Workspace Data Dukung (Daduk), Ruang Klarifikasi Dua Arah, dan Ekspor Resmi Excel/PDF.",
+        "version": "1.0.0",
+        "contact": {
+            "name": "Tim Pengelola TI Kanwil Kalsel",
+            "email": "superadmin@kemenkum.go.id"
+        }
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:8000/api",
+            "description": "Development Server Localhost"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "Sanctum Token",
+                "description": "Masukkan token otentikasi Sanctum setelah login."
+            }
+        },
+        "schemas": {
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "super_admin",
+                            "admin_kanwil",
+                            "operator_satker",
+                            "viewer"
+                        ]
+                    },
+                    "satker_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "SatuanKerja": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "kode": {
+                        "type": "string"
+                    },
+                    "nama": {
+                        "type": "string"
+                    },
+                    "tipe": {
+                        "type": "string",
+                        "enum": [
+                            "kanwil",
+                            "upt",
+                            "satker"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "TahunAnggaran": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "tahun": {
+                        "type": "integer"
+                    },
+                    "is_aktif": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "IndikatorKinerja": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "kode": {
+                        "type": "string"
+                    },
+                    "nama": {
+                        "type": "string"
+                    },
+                    "satuan": {
+                        "type": "string"
+                    },
+                    "polaritas": {
+                        "type": "string",
+                        "enum": [
+                            "positif",
+                            "negatif"
+                        ]
+                    },
+                    "level": {
+                        "type": "string",
+                        "enum": [
+                            "strategis",
+                            "program",
+                            "kegiatan"
+                        ]
+                    }
+                }
+            },
+            "EvaluasiSakip": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "satker_id": {
+                        "type": "integer"
+                    },
+                    "tahun_anggaran_id": {
+                        "type": "integer"
+                    },
+                    "nilai_perencanaan": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "nilai_pengukuran": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "nilai_pelaporan": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "nilai_evaluasi": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "nilai_total": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "predikat": {
+                        "type": "string",
+                        "enum": [
+                            "AA",
+                            "A",
+                            "BB",
+                            "B",
+                            "CC",
+                            "C",
+                            "D"
+                        ]
+                    },
+                    "catatan": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Autentikasi & Akun",
+            "description": "Login, logout, profil, dan pembaruan kata sandi"
+        },
+        {
+            "name": "Dashboard & Portal Publik",
+            "description": "Metrik ringkasan eksekutif dan grafik visual"
+        },
+        {
+            "name": "Master Data",
+            "description": "Pengelolaan Satuan Kerja, Tahun Anggaran, dan Indikator IKU"
+        },
+        {
+            "name": "IKU (Perjanjian Kinerja)",
+            "description": "Penetapan target IKU, pelaporan realisasi, dan matriks capaian"
+        },
+        {
+            "name": "Rencana Aksi (Renaksi)",
+            "description": "Pemantauan aksi triwulanan TW I - IV dan berkas bukti (10MB)"
+        },
+        {
+            "name": "SAKIP (Akuntabilitas)",
+            "description": "Evaluasi 4 komponen (30/30/15/25), perbandingan satker, dan tren"
+        },
+        {
+            "name": "E-RB & LKE ZI 2026",
+            "description": "6 Pengungkit + 2 Hasil, Target Periode, Daduk PDF 50MB, dan Chat Klarifikasi"
+        },
+        {
+            "name": "Manajemen Pengguna",
+            "description": "Pengelolaan user oleh Super Admin, reset password, dan status aktif"
+        },
+        {
+            "name": "Ekspor Dokumen",
+            "description": "Ekspor resmi ke format Excel (.xlsx) dan PDF (.pdf)"
+        }
+    ],
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Autentikasi & Akun"
+                ],
+                "summary": "Masuk ke sistem dengan email & password",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Login berhasil, mengembalikan token Sanctum"
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "example": "superadmin@kemenkum.go.id"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "tags": [
+                    "Autentikasi & Akun"
+                ],
+                "summary": "Ambil data profil pengguna yang sedang login",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "tags": [
+                    "Autentikasi & Akun"
+                ],
+                "summary": "Keluar dan cabut token otentikasi Sanctum",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/auth/password": {
+            "patch": {
+                "tags": [
+                    "Autentikasi & Akun"
+                ],
+                "summary": "Perbarui kata sandi akun mandiri",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "current_password",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "current_password": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/dashboard/summary": {
+            "get": {
+                "tags": [
+                    "Dashboard & Portal Publik"
+                ],
+                "summary": "Ringkasan metrik IKU, Renaksi, SAKIP, dan LKE ZI",
+                "parameters": [
+                    {
+                        "name": "tahun_anggaran_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/dashboard/charts": {
+            "get": {
+                "tags": [
+                    "Dashboard & Portal Publik"
+                ],
+                "summary": "Data analitik visual untuk grafik ApexCharts (Radar SAKIP, Donut LKE, Bar Renaksi)",
+                "parameters": [
+                    {
+                        "name": "tahun_anggaran_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/publik/summary": {
+            "get": {
+                "tags": [
+                    "Dashboard & Portal Publik"
+                ],
+                "summary": "Ringkasan transparansi kinerja instansi untuk portal publik tanpa login",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Publik data"
+                    }
+                }
+            }
+        },
+        "/satker": {
+            "get": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Daftar seluruh Satker / UPT se-Kalsel",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Tambah Satuan Kerja baru",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "kode",
+                                    "nama",
+                                    "tipe"
+                                ],
+                                "properties": {
+                                    "kode": {
+                                        "type": "string",
+                                        "example": "LP-BJM"
+                                    },
+                                    "nama": {
+                                        "type": "string",
+                                        "example": "Lapas Kelas IIA Banjarmasin"
+                                    },
+                                    "tipe": {
+                                        "type": "string",
+                                        "enum": [
+                                            "kanwil",
+                                            "upt",
+                                            "satker"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/satker/{id}": {
+            "get": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Detail Satuan Kerja",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Perbarui Satuan Kerja",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Hapus Satuan Kerja",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/tahun-anggaran": {
+            "get": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Daftar Tahun Anggaran",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Tambah Tahun Anggaran baru",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/tahun-anggaran/{id}/set-aktif": {
+            "patch": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Set tahun anggaran sebagai acuan aktif default sistem",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/indikator-kinerja": {
+            "get": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Daftar Master Indikator Kinerja (IKU)",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Tambah Indikator Kinerja baru",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/indikator-kinerja/{id}": {
+            "get": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Detail Indikator Kinerja",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Perbarui Indikator Kinerja",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Hapus Indikator Kinerja",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/target-iku/matriks": {
+            "get": {
+                "tags": [
+                    "IKU (Perjanjian Kinerja)"
+                ],
+                "summary": "Matriks capaian IKU seluruh Satker dengan kode warna status",
+                "parameters": [
+                    {
+                        "name": "tahun_anggaran_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/target-iku": {
+            "get": {
+                "tags": [
+                    "IKU (Perjanjian Kinerja)"
+                ],
+                "summary": "List target IKU per Satker & Tahun",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "IKU (Perjanjian Kinerja)"
+                ],
+                "summary": "Tetapkan target IKU",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/target-iku/{id}": {
+            "put": {
+                "tags": [
+                    "IKU (Perjanjian Kinerja)"
+                ],
+                "summary": "Perbarui nilai target IKU",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/realisasi-iku": {
+            "get": {
+                "tags": [
+                    "IKU (Perjanjian Kinerja)"
+                ],
+                "summary": "Daftar laporan realisasi IKU",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "IKU (Perjanjian Kinerja)"
+                ],
+                "summary": "Input laporan realisasi IKU & auto kalkulasi persentase",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/realisasi-iku/{id}": {
+            "put": {
+                "tags": [
+                    "IKU (Perjanjian Kinerja)"
+                ],
+                "summary": "Perbarui realisasi IKU",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rencana-aksi": {
+            "get": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Daftar rencana aksi triwulanan",
+                "parameters": [
+                    {
+                        "name": "tahun_anggaran_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "satker_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "triwulan",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "TW1",
+                                "TW2",
+                                "TW3",
+                                "TW4"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Buat Rencana Aksi baru",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rencana-aksi/{id}": {
+            "get": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Detail Rencana Aksi",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Perbarui Rencana Aksi",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Hapus Rencana Aksi",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/realisasi-renaksi": {
+            "post": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Simpan draf realisasi pelaksanaan & progres %",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/realisasi-renaksi/{id}": {
+            "put": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Perbarui draf realisasi",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/realisasi-renaksi/{id}/submit": {
+            "patch": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Operator mengajukan laporan ke Kanwil (Wajib ada minimal 1 bukti)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/realisasi-renaksi/{id}/verify": {
+            "patch": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Admin Kanwil verifikasi (terverifikasi / perlu_perbaikan)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/bukti-dukung-renaksi": {
+            "post": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Unggah berkas bukti dukung (Maksimal 10MB - PDF, JPG, PNG)",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "realisasi_renaksi_id",
+                                    "file"
+                                ],
+                                "properties": {
+                                    "realisasi_renaksi_id": {
+                                        "type": "integer"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/bukti-dukung-renaksi/{id}": {
+            "delete": {
+                "tags": [
+                    "Rencana Aksi (Renaksi)"
+                ],
+                "summary": "Hapus berkas bukti dukung renaksi",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/evaluasi-sakip/perbandingan": {
+            "get": {
+                "tags": [
+                    "SAKIP (Akuntabilitas)"
+                ],
+                "summary": "Tabel komparasi nilai 4 komponen SAKIP 17 Satker se-Kalsel",
+                "parameters": [
+                    {
+                        "name": "tahun_anggaran_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/evaluasi-sakip/tren": {
+            "get": {
+                "tags": [
+                    "SAKIP (Akuntabilitas)"
+                ],
+                "summary": "Data tren capaian nilai SAKIP lintas tahun",
+                "parameters": [
+                    {
+                        "name": "satker_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/evaluasi-sakip": {
+            "get": {
+                "tags": [
+                    "SAKIP (Akuntabilitas)"
+                ],
+                "summary": "Daftar evaluasi SAKIP",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "SAKIP (Akuntabilitas)"
+                ],
+                "summary": "Input nilai 4 komponen SAKIP (Auto kalkulasi bobot 30/30/15/25 & predikat AA-D)",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/evaluasi-sakip/{id}": {
+            "put": {
+                "tags": [
+                    "SAKIP (Akuntabilitas)"
+                ],
+                "summary": "Perbarui nilai evaluasi SAKIP",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rb-area": {
+            "get": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Hirarki Area, Indikator, dan Sub-Indikator (LKE WBK/WBBM 2026 atau RKT)",
+                "parameters": [
+                    {
+                        "name": "kategori",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "lke_wbk_wbbm",
+                                "rkt_general",
+                                "rkt_tematik",
+                                "rkt_meso"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "komponen",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pengungkit",
+                                "hasil"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rb-area/progress": {
+            "get": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Kalkulasi progres pemenuhan data dukung ZI / RKT",
+                "parameters": [
+                    {
+                        "name": "satker_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "periode",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "B03",
+                                "B06",
+                                "B09",
+                                "B12"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rb-target-periode": {
+            "get": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Daftar target periode & status daduk",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rb-target-periode/get-or-init": {
+            "post": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Ambil atau inisialisasi target sub-indikator per periode",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "rb_sub_indikator_id",
+                                    "tahun_anggaran_id",
+                                    "satker_id",
+                                    "periode"
+                                ],
+                                "properties": {
+                                    "rb_sub_indikator_id": {
+                                        "type": "integer"
+                                    },
+                                    "tahun_anggaran_id": {
+                                        "type": "integer"
+                                    },
+                                    "satker_id": {
+                                        "type": "integer"
+                                    },
+                                    "periode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "B03",
+                                            "B06",
+                                            "B09",
+                                            "B12"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rb-target-periode/{id}": {
+            "get": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Detail workspace daduk sub-indikator (dengan countdown)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Perbarui penjelasan inovasi ZI atau batas waktu upload",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rb-target-periode/{id}/submit": {
+            "patch": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Satker ajukan data dukung untuk diverifikasi Kanwil",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rb-target-periode/{id}/verify": {
+            "patch": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Kanwil verifikasi data dukung (Auto-lock workspace jika status Lengkap/Tercapai)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rb-dokumen-daduk": {
+            "post": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Unggah berkas PDF data dukung (Maksimal 50MB - PDF only)",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "rb_target_periode_id",
+                                    "file"
+                                ],
+                                "properties": {
+                                    "rb_target_periode_id": {
+                                        "type": "integer"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rb-dokumen-daduk/{id}": {
+            "delete": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Hapus berkas PDF data dukung (hanya jika workspace tidak terkunci)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/rb-catatan-verifikasi": {
+            "get": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Daftar pesan ruang diskusi / klarifikasi dua arah",
+                "parameters": [
+                    {
+                        "name": "rb_target_periode_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "E-RB & LKE ZI 2026"
+                ],
+                "summary": "Kirim pesan klarifikasi baru",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/users": {
+            "get": {
+                "tags": [
+                    "Manajemen Pengguna"
+                ],
+                "summary": "List pengguna sistem (Super Admin only)",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "satker_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Manajemen Pengguna"
+                ],
+                "summary": "Tambah pengguna baru (Super Admin only)",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "tags": [
+                    "Manajemen Pengguna"
+                ],
+                "summary": "Detail pengguna",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Manajemen Pengguna"
+                ],
+                "summary": "Perbarui data pengguna",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Manajemen Pengguna"
+                ],
+                "summary": "Hapus pengguna",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/users/{id}/toggle-active": {
+            "patch": {
+                "tags": [
+                    "Manajemen Pengguna"
+                ],
+                "summary": "Aktifkan atau nonaktifkan akun pengguna",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/users/{id}/reset-password": {
+            "patch": {
+                "tags": [
+                    "Manajemen Pengguna"
+                ],
+                "summary": "Reset kata sandi pengguna oleh Super Admin",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/export/iku/excel": {
+            "get": {
+                "tags": [
+                    "Ekspor Dokumen"
+                ],
+                "summary": "Unduh lembar kerja Matriks IKU format Excel (.xlsx)",
+                "parameters": [
+                    {
+                        "name": "tahun_anggaran_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/export/sakip/excel": {
+            "get": {
+                "tags": [
+                    "Ekspor Dokumen"
+                ],
+                "summary": "Unduh lembar komparasi nilai SAKIP format Excel (.xlsx)",
+                "parameters": [
+                    {
+                        "name": "tahun_anggaran_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/export/sakip/pdf/{satkerId}": {
+            "get": {
+                "tags": [
+                    "Ekspor Dokumen"
+                ],
+                "summary": "Unduh Lembar Hasil Evaluasi (LHE) SAKIP resmi format PDF (.pdf)",
+                "parameters": [
+                    {
+                        "name": "satkerId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "tahun_anggaran_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/export/renaksi/pdf/{id}": {
+            "get": {
+                "tags": [
+                    "Ekspor Dokumen"
+                ],
+                "summary": "Unduh Laporan Capaian Rencana Aksi resmi format PDF (.pdf)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operasi berhasil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    }
+}

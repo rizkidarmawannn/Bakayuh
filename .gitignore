@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+vendor/
+*/node_modules/
+*/vendor/
+
+# Environment files
+.env
+.env.*
+!.env.example
+*.env
+
+# Build outputs
+dist/
+build/
+*/dist/
+*/public/build/
+*/public/storage/
+
+# Logs & temporary storage
+*.log
+.phpunit.result.cache
+.phpunit.cache/
+*/storage/logs/*.log
+*/storage/framework/cache/data/
+*/storage/framework/sessions/
+*/storage/framework/views/
+
+# Agents & IDEs
+.agents/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
