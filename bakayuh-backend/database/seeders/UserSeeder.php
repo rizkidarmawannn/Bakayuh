@@ -12,7 +12,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $kanwil = SatuanKerja::where('kode', 'KANWIL-KALSEN')->first();
+        $kanwil = SatuanKerja::where('kode', 'KANWIL-KALSEL')->first();
         $lapasBjm = SatuanKerja::where('kode', 'LP-BJM')->first();
 
         // 1. Super Admin

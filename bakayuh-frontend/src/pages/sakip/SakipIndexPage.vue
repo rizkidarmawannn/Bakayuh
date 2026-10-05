@@ -208,223 +208,305 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6 animate-fade-in">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Evaluasi SAKIP (4 Komponen)</h1>
-        <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
-          Sistem Akuntabilitas Kinerja Instansi Pemerintah (Perencanaan 30%, Pengukuran 30%, Pelaporan 15%, Evaluasi 25%)
-        </p>
-      </div>
+  <div class="space-y-6 animate-fade-in pb-16">
+    <!-- Official Kemenkumham Hero Banner -->
+    <div class="rounded-2xl bg-gradient-to-r from-[#0C2B64] via-[#091F4A] to-[#163870] p-6 sm:p-7 text-white shadow-md relative overflow-hidden">
+      <div class="absolute -right-10 -bottom-10 w-80 h-80 rounded-full bg-white/5 pointer-events-none blur-2xl" />
+      <div class="relative z-10 space-y-2">
+        <div class="flex items-center gap-2 text-xs text-slate-300 font-medium">
+          <span>Beranda</span>
+          <span>&gt;</span>
+          <span class="text-white font-semibold">Evaluasi Akuntabilitas Kinerja (SAKIP)</span>
+        </div>
+        <div class="text-[11px] font-black uppercase tracking-widest text-amber-400">
+          Akuntabilitas SAKIP
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-slate-900 shadow-sm shrink-0">
+              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-xl sm:text-2xl font-black text-white tracking-wide uppercase">
+                Evaluasi Akuntabilitas Kinerja
+              </h1>
+              <p class="text-xs sm:text-sm text-slate-200 mt-0.5 max-w-2xl leading-relaxed">
+                Pengukuran dan evaluasi Sistem Akuntabilitas Kinerja Instansi Pemerintah (SAKIP) Satuan Kerja se-Kalimantan Selatan.
+              </p>
+            </div>
+          </div>
 
-      <div class="flex items-center gap-2">
-        <button
-          v-if="isSuperAdmin || isAdminKanwil"
-          class="btn-primary inline-flex items-center gap-2 text-xs"
-          @click="openCreateModal()"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Input Nilai SAKIP
-        </button>
+          <!-- Action Button in Banner -->
+          <div v-if="isSuperAdmin || isAdminKanwil" class="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+            <button
+              type="button"
+              @click="openCreateModal()"
+              class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all border border-amber-400/40 bg-amber-500 text-slate-950 hover:bg-amber-400 flex items-center gap-2 shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Input Nilai SAKIP</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Summary Stat Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <div class="card p-4 bg-white border border-slate-200">
-        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Rata-rata Se-Kalsel</p>
-        <p class="text-2xl font-black text-kemenkum-navy mt-1">
-          {{ stats.average }} <span class="text-xs font-normal text-slate-400">/ 100</span>
-        </p>
-        <p class="text-[11px] text-slate-400 mt-1">
-          {{ stats.evaluatedCount }} dari {{ stats.totalCount }} satker dinilai
-        </p>
-      </div>
-
-      <div class="card p-4 bg-emerald-50/50 border border-emerald-100">
-        <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Nilai Tertinggi</p>
-        <div v-if="stats.highest" class="mt-1">
-          <p class="text-2xl font-black text-emerald-700">{{ stats.highest.nilai_total }}</p>
-          <p class="text-xs font-bold text-slate-800 truncate" :title="stats.highest.nama">{{ stats.highest.nama }}</p>
-        </div>
-        <p v-else class="text-sm font-semibold text-slate-400 mt-2">Belum ada data</p>
-      </div>
-
-      <div class="card p-4 bg-rose-50/50 border border-rose-100">
-        <p class="text-[11px] font-bold uppercase tracking-wider text-rose-700">Nilai Terendah</p>
-        <div v-if="stats.lowest" class="mt-1">
-          <p class="text-2xl font-black text-rose-700">{{ stats.lowest.nilai_total }}</p>
-          <p class="text-xs font-bold text-slate-800 truncate" :title="stats.lowest.nama">{{ stats.lowest.nama }}</p>
-        </div>
-        <p v-else class="text-sm font-semibold text-slate-400 mt-2">Belum ada data</p>
-      </div>
-
-      <div class="card p-4 bg-white border border-slate-200 flex flex-col justify-between">
-        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Bobot Komponen SAKIP</p>
-        <div class="grid grid-cols-4 gap-1 text-center mt-2">
-          <div class="p-1 rounded bg-slate-50">
-            <span class="block text-[10px] text-slate-400">Ren</span>
-            <span class="text-xs font-black text-slate-700">30%</span>
-          </div>
-          <div class="p-1 rounded bg-slate-50">
-            <span class="block text-[10px] text-slate-400">Ukur</span>
-            <span class="text-xs font-black text-slate-700">30%</span>
-          </div>
-          <div class="p-1 rounded bg-slate-50">
-            <span class="block text-[10px] text-slate-400">Lapor</span>
-            <span class="text-xs font-black text-slate-700">15%</span>
-          </div>
-          <div class="p-1 rounded bg-slate-50">
-            <span class="block text-[10px] text-slate-400">Eval</span>
-            <span class="text-xs font-black text-slate-700">25%</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filter Bar -->
-    <div class="card p-4 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="w-48">
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Tahun Anggaran</label>
-          <select
-            v-model="selectedTahunId"
-            class="input-select text-xs py-1.5"
-            @change="fetchPerbandingan"
-          >
-            <option v-for="t in tahuns" :key="t.id" :value="t.id">
-              {{ t.tahun }} {{ t.is_aktif ? '(Aktif)' : '' }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div class="w-full sm:w-72">
-        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Cari Satuan Kerja</label>
-        <div class="relative">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Ketik nama atau kode..."
-            class="input-text text-xs py-1.5 pl-8"
-          />
-          <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="card p-5 bg-white border border-slate-200 shadow-sm flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-blue-50 text-[#091F4A] flex items-center justify-center shrink-0 border border-blue-100">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         </div>
+        <div>
+          <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Rata-rata Se-Kalsel</p>
+          <p class="text-2xl font-black text-[#091F4A] mt-0.5">
+            {{ stats.average }} <span class="text-xs font-normal text-slate-400">/ 100</span>
+          </p>
+          <p class="text-[11px] text-slate-400 mt-0.5">
+            {{ stats.evaluatedCount }} dari {{ stats.totalCount }} satker dinilai
+          </p>
+        </div>
+      </div>
+
+      <div class="card p-5 bg-white border border-slate-200 shadow-sm flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Nilai Tertinggi</p>
+          <div v-if="stats.highest" class="mt-0.5">
+            <p class="text-2xl font-black text-emerald-700">{{ stats.highest.nilai_total }}</p>
+            <p class="text-xs font-bold text-slate-800 truncate" :title="stats.highest.nama">{{ stats.highest.nama }}</p>
+          </div>
+          <p v-else class="text-xs font-semibold text-slate-400 mt-1">Belum ada data</p>
+        </div>
+      </div>
+
+      <div class="card p-5 bg-white border border-slate-200 shadow-sm flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center shrink-0 border border-rose-100">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-[11px] font-bold uppercase tracking-wider text-rose-700">Nilai Terendah</p>
+          <div v-if="stats.lowest" class="mt-0.5">
+            <p class="text-2xl font-black text-rose-700">{{ stats.lowest.nilai_total }}</p>
+            <p class="text-xs font-bold text-slate-800 truncate" :title="stats.lowest.nama">{{ stats.lowest.nama }}</p>
+          </div>
+          <p v-else class="text-xs font-semibold text-slate-400 mt-1">Belum ada data</p>
+        </div>
+      </div>
+
+      <div class="card p-5 bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Bobot Komponen SAKIP</p>
+        <div class="grid grid-cols-4 gap-1.5 text-center mt-2">
+          <div class="p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="block text-[10px] text-slate-400 font-bold">Ren</span>
+            <span class="text-xs font-black text-slate-800">30%</span>
+          </div>
+          <div class="p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="block text-[10px] text-slate-400 font-bold">Ukur</span>
+            <span class="text-xs font-black text-slate-800">30%</span>
+          </div>
+          <div class="p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="block text-[10px] text-slate-400 font-bold">Lapor</span>
+            <span class="text-xs font-black text-slate-800">15%</span>
+          </div>
+          <div class="p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="block text-[10px] text-slate-400 font-bold">Eval</span>
+            <span class="text-xs font-black text-slate-800">25%</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Comparison Table -->
-    <div class="card overflow-hidden">
-      <SkeletonTable v-if="loading" :rows="6" :cols="8" />
+    <!-- Filter Bar Card -->
+    <div class="card p-5 bg-white border border-slate-200 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-slate-700 whitespace-nowrap">Tahun Anggaran:</label>
+            <select
+              v-model="selectedTahunId"
+              class="form-select text-xs py-2 pl-3 pr-8 font-semibold border-slate-200 rounded-xl focus:ring-2 focus:ring-[#091F4A]"
+              @change="fetchPerbandingan"
+            >
+              <option v-for="t in tahuns" :key="t.id" :value="t.id">
+                {{ t.tahun }} {{ t.is_aktif ? '(Aktif)' : '' }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="w-full sm:w-72">
+          <div class="relative">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari satuan kerja atau kode..."
+              class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#091F4A]"
+            />
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="card overflow-hidden bg-white border border-slate-200 shadow-sm rounded-xl">
+      <!-- Card Title Bar (Matching Image 5) -->
+      <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="px-2.5 py-1 rounded bg-[#091F4A] text-white text-[10px] font-black uppercase tracking-wider">
+            REKAPITULASI SAKIP
+          </span>
+          <h2 class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wide">
+            Rekapitulasi Nilai & Predikat SAKIP Satker
+          </h2>
+        </div>
+        <div class="text-xs font-semibold text-slate-500">
+          Total: <span class="font-bold text-slate-800">{{ filteredRows.length }}</span> Satuan Kerja
+        </div>
+      </div>
+
+      <SkeletonTable v-if="loading" :rows="6" :cols="9" />
 
       <div v-else class="overflow-x-auto">
-        <table class="table-custom">
+        <table class="w-full text-left border-collapse">
           <thead>
-            <tr>
-              <th class="w-12 text-center">No</th>
-              <th class="w-72">Satuan Kerja</th>
-              <th class="text-center w-28">Perencanaan<br><span class="text-[10px] font-normal text-slate-400">(Bobot 30%)</span></th>
-              <th class="text-center w-28">Pengukuran<br><span class="text-[10px] font-normal text-slate-400">(Bobot 30%)</span></th>
-              <th class="text-center w-28">Pelaporan<br><span class="text-[10px] font-normal text-slate-400">(Bobot 15%)</span></th>
-              <th class="text-center w-28">Evaluasi<br><span class="text-[10px] font-normal text-slate-400">(Bobot 25%)</span></th>
-              <th class="text-center w-32 bg-slate-50 font-black">Nilai Akhir<br><span class="text-[10px] font-normal text-slate-400">(Total 100%)</span></th>
-              <th class="text-center w-28">Predikat</th>
-              <th class="text-center w-32">Aksi</th>
+            <tr class="bg-[#091F4A] text-white text-[11px] font-black uppercase tracking-wider">
+              <th class="py-4 px-4 text-center w-12 border-r border-white/10">#</th>
+              <th class="py-4 px-5 min-w-[280px] border-r border-white/10">Satuan Kerja</th>
+              <th class="py-4 px-3 text-center min-w-[130px] border-r border-white/10">
+                Perencanaan<br><span class="text-[9px] font-medium text-slate-300">(Bobot 30%)</span>
+              </th>
+              <th class="py-4 px-3 text-center min-w-[130px] border-r border-white/10">
+                Pengukuran<br><span class="text-[9px] font-medium text-slate-300">(Bobot 30%)</span>
+              </th>
+              <th class="py-4 px-3 text-center min-w-[130px] border-r border-white/10">
+                Pelaporan<br><span class="text-[9px] font-medium text-slate-300">(Bobot 15%)</span>
+              </th>
+              <th class="py-4 px-3 text-center min-w-[130px] border-r border-white/10">
+                Evaluasi<br><span class="text-[9px] font-medium text-slate-300">(Bobot 25%)</span>
+              </th>
+              <th class="py-4 px-4 text-center min-w-[140px] border-r border-white/10 bg-[#061737]">
+                Nilai Akhir<br><span class="text-[9px] font-medium text-amber-300">(Total 100%)</span>
+              </th>
+              <th class="py-4 px-3 text-center min-w-[120px] border-r border-white/10">Predikat</th>
+              <th class="py-4 px-4 text-center min-w-[130px]">Aksi</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-slate-100 text-xs">
             <tr
               v-for="(row, idx) in paginatedRows"
               :key="row.satker_id"
-              class="hover:bg-slate-50/80 transition-colors"
+              class="hover:bg-blue-50/40 transition-colors"
             >
-              <td class="text-center text-xs font-semibold text-slate-400">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
-              <td class="text-xs">
-                <span class="font-bold text-slate-800">{{ row.nama }}</span>
-                <div class="flex items-center gap-1.5 mt-0.5">
+              <!-- No -->
+              <td class="py-4 px-4 text-center font-bold text-slate-400">
+                {{ (currentPage - 1) * pageSize + idx + 1 }}
+              </td>
+
+              <!-- Satker -->
+              <td class="py-4 px-5">
+                <span class="font-bold text-slate-800 text-xs block leading-snug">{{ row.nama }}</span>
+                <div class="flex items-center gap-1.5 mt-1">
                   <span class="text-[10px] text-slate-400 font-mono">{{ row.kode }}</span>
-                  <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 uppercase font-semibold">
+                  <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 uppercase font-semibold">
                     {{ row.tipe }}
                   </span>
                 </div>
               </td>
 
               <!-- Perencanaan 30% -->
-              <td class="text-center text-xs">
-                <span v-if="row.nilai_perencanaan !== null" class="font-semibold text-slate-700">
-                  {{ row.nilai_perencanaan }}
+              <td class="py-4 px-3 text-center text-xs">
+                <span v-if="row.nilai_perencanaan !== null" class="font-bold text-slate-700 font-mono">
+                  {{ Number(row.nilai_perencanaan).toFixed(2) }}
                 </span>
-                <span v-else class="text-slate-300">-</span>
+                <span v-else class="text-slate-300">&mdash;</span>
               </td>
 
               <!-- Pengukuran 30% -->
-              <td class="text-center text-xs">
-                <span v-if="row.nilai_pengukuran !== null" class="font-semibold text-slate-700">
-                  {{ row.nilai_pengukuran }}
+              <td class="py-4 px-3 text-center text-xs">
+                <span v-if="row.nilai_pengukuran !== null" class="font-bold text-slate-700 font-mono">
+                  {{ Number(row.nilai_pengukuran).toFixed(2) }}
                 </span>
-                <span v-else class="text-slate-300">-</span>
+                <span v-else class="text-slate-300">&mdash;</span>
               </td>
 
               <!-- Pelaporan 15% -->
-              <td class="text-center text-xs">
-                <span v-if="row.nilai_pelaporan !== null" class="font-semibold text-slate-700">
-                  {{ row.nilai_pelaporan }}
+              <td class="py-4 px-3 text-center text-xs">
+                <span v-if="row.nilai_pelaporan !== null" class="font-bold text-slate-700 font-mono">
+                  {{ Number(row.nilai_pelaporan).toFixed(2) }}
                 </span>
-                <span v-else class="text-slate-300">-</span>
+                <span v-else class="text-slate-300">&mdash;</span>
               </td>
 
               <!-- Evaluasi 25% -->
-              <td class="text-center text-xs">
-                <span v-if="row.nilai_evaluasi !== null" class="font-semibold text-slate-700">
-                  {{ row.nilai_evaluasi }}
+              <td class="py-4 px-3 text-center text-xs">
+                <span v-if="row.nilai_evaluasi !== null" class="font-bold text-slate-700 font-mono">
+                  {{ Number(row.nilai_evaluasi).toFixed(2) }}
                 </span>
-                <span v-else class="text-slate-300">-</span>
+                <span v-else class="text-slate-300">&mdash;</span>
               </td>
 
-              <!-- Nilai Akhir Total -->
-              <td class="text-center text-xs bg-slate-50/60 font-black">
+              <!-- Nilai Akhir Total (Royal blue font, matching image 5) -->
+              <td class="py-4 px-4 text-center bg-blue-50/30">
                 <span
                   v-if="row.nilai_total !== null"
-                  class="text-sm font-black"
-                  :class="{
-                    'text-emerald-700': (row.nilai_total ?? 0) >= 80,
-                    'text-blue-700': (row.nilai_total ?? 0) >= 60 && (row.nilai_total ?? 0) < 80,
-                    'text-amber-600': (row.nilai_total ?? 0) >= 50 && (row.nilai_total ?? 0) < 60,
-                    'text-rose-600': (row.nilai_total ?? 0) < 50,
-                  }"
+                  class="text-sm font-black text-blue-700 font-mono"
                 >
-                  {{ row.nilai_total }}
+                  {{ Number(row.nilai_total).toFixed(2) }}
                 </span>
-                <span v-else class="text-slate-300 text-xs font-normal">Belum ada</span>
+                <span v-else class="text-slate-300 text-xs italic">Belum dinilai</span>
               </td>
 
-              <!-- Predikat -->
-              <td class="text-center">
-                <StatusBadge
-                  :label="getPredikatBadge(row.predikat).label"
-                  :color="getPredikatBadge(row.predikat).color"
-                />
+              <!-- Predikat (Circular badge matching image 5) -->
+              <td class="py-4 px-3 text-center">
+                <div v-if="row.predikat" class="flex justify-center">
+                  <span
+                    class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-black text-xs shadow-xs"
+                    :class="{
+                      'border-emerald-500 bg-emerald-50 text-emerald-700': row.predikat === 'AA' || row.predikat === 'A',
+                      'border-blue-500 bg-blue-50 text-blue-700': row.predikat === 'BB' || row.predikat === 'B',
+                      'border-amber-500 bg-amber-50 text-amber-700': row.predikat === 'CC',
+                      'border-rose-500 bg-rose-50 text-rose-700': row.predikat === 'C' || row.predikat === 'D',
+                    }"
+                  >
+                    {{ row.predikat }}
+                  </span>
+                </div>
+                <span v-else class="text-slate-400 text-xs italic">&mdash;</span>
               </td>
 
               <!-- Aksi -->
-              <td class="text-center">
+              <td class="py-4 px-4 text-center">
                 <div class="flex items-center justify-center gap-1.5">
                   <router-link
                     :to="`/sakip/${row.satker_id}`"
-                    class="btn-secondary py-1 px-2.5 text-[11px] inline-flex items-center gap-1"
-                    title="Rincian & Tren"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-xs inline-flex items-center gap-1"
+                    title="Rincian & Radar SAKIP"
                   >
+                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
                     <span>Detail</span>
                   </router-link>
 
                   <button
                     v-if="isSuperAdmin || isAdminKanwil"
-                    class="p-1 text-slate-400 hover:text-kemenkum-navy rounded transition-colors"
+                    class="p-1.5 text-slate-400 hover:text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
                     :title="row.evaluasi_id ? 'Ubah Nilai' : 'Input Nilai'"
                     @click="openCreateModal(row)"
                   >
