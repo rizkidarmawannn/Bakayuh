@@ -218,20 +218,20 @@ onMounted(async () => {
         Tidak ada satuan kerja yang sesuai pencarian.
       </div>
 
-      <!-- Compact Table with Dark Navy Header & Fitted Rows -->
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-xs text-left border-collapse">
+      <!-- Compact Table with Dark Navy Header & Fitted Rows (No Horizontal Scroll) -->
+      <div>
+        <table class="w-full text-xs text-left border-collapse table-auto">
           <thead class="bg-[#091F4A] text-white uppercase text-[11px] tracking-wider font-extrabold select-none">
             <tr>
-              <th class="w-12 text-center py-2.5 px-3 border-r border-white/10">#</th>
-              <th class="min-w-[260px] py-2.5 px-4 border-r border-white/10">Satuan Kerja</th>
+              <th class="w-10 text-center py-2.5 px-2 border-r border-white/10">#</th>
+              <th class="py-2.5 px-3 border-r border-white/10 w-72">Satuan Kerja</th>
               <th
                 v-for="ind in (matriks[0]?.indikators ?? [])"
                 :key="ind.indikator_id"
-                class="min-w-[150px] text-center py-2.5 px-3 border-r border-white/10 last:border-r-0"
+                class="text-center py-2 px-2 border-r border-white/10 last:border-r-0"
               >
-                <div class="font-black text-white text-xs">{{ ind.kode }}</div>
-                <div class="text-[10px] text-slate-300 font-normal truncate max-w-[140px] mx-auto mt-0.5 normal-case" :title="ind.nama">
+                <div class="font-black text-white text-[11px] tracking-tight">{{ ind.kode }}</div>
+                <div class="text-[9px] text-slate-300 font-normal truncate max-w-[120px] mx-auto mt-0.5 normal-case" :title="ind.nama">
                   {{ ind.nama }}
                 </div>
               </th>
@@ -244,27 +244,29 @@ onMounted(async () => {
               class="hover:bg-blue-50/40 transition-colors"
             >
               <!-- Row Number -->
-              <td class="text-center font-bold text-slate-400 text-xs py-2 px-3 bg-slate-50/40">
+              <td class="text-center font-bold text-slate-400 text-xs py-2 px-2 bg-slate-50/40">
                 {{ (currentPage - 1) * pageSize + idx + 1 }}
               </td>
 
-              <!-- Satker Details (Compact Single Line Layout) -->
-              <td class="py-2 px-4">
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-slate-900 text-xs truncate max-w-[220px]" :title="row.satker.nama">
+              <!-- Satker Details -->
+              <td class="py-2 px-3">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="font-bold text-slate-900 text-xs leading-snug">
                     {{ row.satker.nama }}
                   </span>
-                  <span
-                    class="text-[9px] px-1.5 py-0.2 rounded font-black uppercase tracking-wider shrink-0"
-                    :class="{
-                      'bg-[#091F4A] text-white': row.satker.tipe === 'kanwil',
-                      'bg-blue-100 text-blue-800 border border-blue-200': row.satker.tipe === 'upt',
-                      'bg-slate-100 text-slate-700 border border-slate-200': row.satker.tipe === 'satker',
-                    }"
-                  >
-                    {{ row.satker.tipe }}
-                  </span>
-                  <span class="text-[10px] text-slate-400 font-mono shrink-0">{{ row.satker.kode }}</span>
+                  <div class="flex items-center gap-1">
+                    <span
+                      class="text-[9px] px-1 py-0.2 rounded font-black uppercase tracking-wider shrink-0"
+                      :class="{
+                        'bg-[#091F4A] text-white': row.satker.tipe === 'kanwil',
+                        'bg-blue-100 text-blue-800 border border-blue-200': row.satker.tipe === 'upt',
+                        'bg-slate-100 text-slate-700 border border-slate-200': row.satker.tipe === 'satker',
+                      }"
+                    >
+                      {{ row.satker.tipe }}
+                    </span>
+                    <span class="text-[9px] text-slate-400 font-mono shrink-0">{{ row.satker.kode }}</span>
+                  </div>
                 </div>
               </td>
 
@@ -272,13 +274,13 @@ onMounted(async () => {
               <td
                 v-for="cell in row.indikators"
                 :key="cell.indikator_id"
-                class="text-center py-2 px-2.5"
+                class="text-center py-2 px-1.5"
               >
                 <div v-if="cell.target !== null">
                   <!-- Status Badge -->
                   <div
                     v-if="cell.persentase !== null"
-                    class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs min-w-[76px]"
+                    class="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded text-[11px] font-black shadow-2xs"
                     :class="{
                       'bg-emerald-50 text-emerald-700 border border-emerald-200': cell.status_color === 'green',
                       'bg-amber-50 text-amber-700 border border-amber-200': cell.status_color === 'yellow',
@@ -286,13 +288,13 @@ onMounted(async () => {
                     }"
                   >
                     <span>{{ cell.persentase.toFixed(1) }}%</span>
-                    <span class="text-[10px] font-semibold opacity-75 font-mono">
+                    <span class="text-[9px] font-semibold opacity-75 font-mono">
                       ({{ cell.realisasi }}/{{ cell.target }})
                     </span>
                   </div>
-                  <div v-else class="text-slate-400 text-[11px]">
-                    <span class="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">
-                      Target: {{ cell.target }}
+                  <div v-else class="text-slate-400 text-[10px]">
+                    <span class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-[9px] text-slate-500">
+                      T: {{ cell.target }}
                     </span>
                   </div>
                 </div>
