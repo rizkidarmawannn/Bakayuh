@@ -123,7 +123,7 @@ function fillDemo(email: string) {
         <!-- Quick Demo Accounts for testing -->
         <div class="mt-6 pt-4 border-t border-slate-100">
           <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Akun Demo Pengujian:</p>
-          <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="grid grid-cols-3 gap-2 text-xs">
             <button
               type="button"
               @click="fillDemo('superadmin@kemenkum.go.id')"
@@ -144,13 +144,6 @@ function fillDemo(email: string) {
               class="px-2 py-1 text-left bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 text-slate-700 truncate"
             >
               🏢 Operator Satker
-            </button>
-            <button
-              type="button"
-              @click="fillDemo('pimpinan@kemenkum.go.id')"
-              class="px-2 py-1 text-left bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 text-slate-700 truncate"
-            >
-              👤 Pimpinan (Viewer)
             </button>
           </div>
         </div>

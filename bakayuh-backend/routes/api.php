@@ -31,6 +31,33 @@ Route::prefix('auth')->group(function () {
 
 Route::get('/publik/summary', [PublikController::class, 'summary']);
 
+// E-Performance & Master Read Routes (Portal Publik tanpa login)
+Route::get('/satker', [SatuanKerjaController::class, 'index']);
+Route::get('/satker/{satker}', [SatuanKerjaController::class, 'show']);
+
+Route::get('/tahun-anggaran', [TahunAnggaranController::class, 'index']);
+Route::get('/tahun-anggaran/{tahun_anggaran}', [TahunAnggaranController::class, 'show']);
+
+Route::get('/indikator-kinerja', [IndikatorKinerjaController::class, 'index']);
+Route::get('/indikator-kinerja/{indikator_kinerja}', [IndikatorKinerjaController::class, 'show']);
+
+Route::get('/target-iku', [TargetIkuController::class, 'index']);
+Route::get('/target-iku/matriks', [TargetIkuController::class, 'matriks']);
+Route::get('/target-iku/{target_iku}', [TargetIkuController::class, 'show']);
+
+Route::get('/realisasi-iku', [RealisasiIkuController::class, 'index']);
+Route::get('/realisasi-iku/{realisasi_iku}', [RealisasiIkuController::class, 'show']);
+
+Route::get('/rencana-aksi', [RencanaAksiController::class, 'index']);
+Route::get('/rencana-aksi/{rencana_aksi}', [RencanaAksiController::class, 'show']);
+
+Route::get('/evaluasi-sakip', [EvaluasiSakipController::class, 'index']);
+Route::get('/evaluasi-sakip/perbandingan', [EvaluasiSakipController::class, 'perbandingan']);
+Route::get('/evaluasi-sakip/tren', [EvaluasiSakipController::class, 'tren']);
+Route::get('/evaluasi-sakip/{evaluasi_sakip}', [EvaluasiSakipController::class, 'show']);
+
+Route::get('/dashboard/charts', [DashboardController::class, 'charts']);
+
 /*
 |--------------------------------------------------------------------------
 | Authenticated Routes (Sanctum)
@@ -46,25 +73,23 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
-    Route::get('/dashboard/charts', [DashboardController::class, 'charts']);
 
-    // Satuan Kerja
-    Route::apiResource('satker', SatuanKerjaController::class);
+    // Satuan Kerja (Mutations)
+    Route::apiResource('satker', SatuanKerjaController::class)->except(['index', 'show']);
 
-    // Tahun Anggaran
-    Route::apiResource('tahun-anggaran', TahunAnggaranController::class);
+    // Tahun Anggaran (Mutations)
+    Route::apiResource('tahun-anggaran', TahunAnggaranController::class)->except(['index', 'show']);
     Route::match(['put', 'patch'], '/tahun-anggaran/{tahun}/set-aktif', [TahunAnggaranController::class, 'setAktif']);
 
-    // Indikator Kinerja (Master IKU)
-    Route::apiResource('indikator-kinerja', IndikatorKinerjaController::class);
+    // Indikator Kinerja (Master IKU Mutations)
+    Route::apiResource('indikator-kinerja', IndikatorKinerjaController::class)->except(['index', 'show']);
 
-    // Target IKU & Realisasi IKU
-    Route::get('/target-iku/matriks', [TargetIkuController::class, 'matriks']);
-    Route::apiResource('target-iku', TargetIkuController::class);
-    Route::apiResource('realisasi-iku', RealisasiIkuController::class);
+    // Target IKU & Realisasi IKU (Mutations)
+    Route::apiResource('target-iku', TargetIkuController::class)->except(['index', 'show']);
+    Route::apiResource('realisasi-iku', RealisasiIkuController::class)->except(['index', 'show']);
 
-    // Rencana Aksi (Renaksi TW I - IV)
-    Route::apiResource('rencana-aksi', RencanaAksiController::class);
+    // Rencana Aksi (Mutations)
+    Route::apiResource('rencana-aksi', RencanaAksiController::class)->except(['index', 'show']);
 
     // Realisasi Renaksi (Pelaporan & Verifikasi)
     Route::apiResource('realisasi-renaksi', RealisasiRenaksiController::class);
@@ -75,10 +100,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/bukti-dukung-renaksi', [BuktiDukungRenaksiController::class, 'store']);
     Route::delete('/bukti-dukung-renaksi/{bukti_dukung_renaksi}', [BuktiDukungRenaksiController::class, 'destroy']);
 
-    // Evaluasi SAKIP (4 Komponen)
-    Route::get('/evaluasi-sakip/perbandingan', [EvaluasiSakipController::class, 'perbandingan']);
-    Route::get('/evaluasi-sakip/tren', [EvaluasiSakipController::class, 'tren']);
-    Route::apiResource('evaluasi-sakip', EvaluasiSakipController::class);
+    // Evaluasi SAKIP (Mutations)
+    Route::apiResource('evaluasi-sakip', EvaluasiSakipController::class)->except(['index', 'show']);
 
     // E-RB & LKE ZI (Area, Indikator, Sub-Indikator, Target Periode, Daduk Workspace, Chat Klarifikasi)
     Route::get('/rb-area', [RbAreaController::class, 'index']);

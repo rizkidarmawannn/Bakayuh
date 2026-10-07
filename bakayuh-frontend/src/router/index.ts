@@ -3,14 +3,20 @@ import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  scrollBehavior: () => ({ top: 0 }),
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    }
+    if (to.path === from.path) {
+      return false
+    }
+    return { top: 0 }
+  },
   routes: [
     // Public routes
     {
       path: '/',
-      name: 'home',
-      component: () => import('@/pages/publik/PublicPerformancePage.vue'),
-      meta: { public: true },
+      redirect: '/publik',
     },
     {
       path: '/login',
@@ -27,6 +33,34 @@ const router = createRouter({
           name: 'publik',
           component: () => import('@/pages/publik/PublikPage.vue'),
           meta: { public: true },
+        },
+        {
+          path: 'iku',
+          name: 'publik.iku',
+          component: () => import('@/pages/publik/PublikPage.vue'),
+          meta: { public: true },
+          props: { defaultTab: 'iku' },
+        },
+        {
+          path: 'matriks',
+          name: 'publik.matriks',
+          component: () => import('@/pages/publik/PublikPage.vue'),
+          meta: { public: true },
+          props: { defaultTab: 'matriks' },
+        },
+        {
+          path: 'renaksi',
+          name: 'publik.renaksi',
+          component: () => import('@/pages/publik/PublikPage.vue'),
+          meta: { public: true },
+          props: { defaultTab: 'renaksi' },
+        },
+        {
+          path: 'sakip',
+          name: 'publik.sakip',
+          component: () => import('@/pages/publik/PublikPage.vue'),
+          meta: { public: true },
+          props: { defaultTab: 'sakip' },
         },
       ],
     },
@@ -104,6 +138,10 @@ router.beforeEach(async (to) => {
   if (to.meta.public) return true
 
   if (!authStore.isAuthenticated) {
+    if (to.path === '/iku') return '/publik?tab=iku'
+    if (to.path === '/iku/matriks') return '/publik?tab=matriks'
+    if (to.path === '/renaksi') return '/publik?tab=renaksi'
+    if (to.path === '/sakip') return '/publik?tab=sakip'
     return '/login'
   }
 
