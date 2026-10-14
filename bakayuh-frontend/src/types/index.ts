@@ -30,6 +30,7 @@ export interface SatuanKerja {
 export interface User {
   id: number
   name: string
+  username?: string
   email: string
   role: UserRole
   role_label: string
@@ -200,7 +201,8 @@ export interface DashboardSummary {
 }
 
 export interface LoginCredentials {
-  email: string
+  username?: string
+  email?: string
   password: string
 }
 

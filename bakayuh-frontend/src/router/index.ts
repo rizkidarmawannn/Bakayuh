@@ -15,54 +15,28 @@ const router = createRouter({
   routes: [
     // Public routes
     {
-      path: '/',
-      redirect: '/publik',
-    },
-    {
       path: '/login',
       name: 'login',
       component: () => import('@/pages/auth/LoginPage.vue'),
       meta: { public: true },
     },
+    // Public Portal (Root URL: http://127.0.0.1:5173/)
     {
-      path: '/publik',
+      path: '/',
       component: () => import('@/layouts/PublicLayout.vue'),
       children: [
         {
           path: '',
-          name: 'publik',
+          name: 'beranda',
           component: () => import('@/pages/publik/PublikPage.vue'),
           meta: { public: true },
-        },
-        {
-          path: 'iku',
-          name: 'publik.iku',
-          component: () => import('@/pages/publik/PublikPage.vue'),
-          meta: { public: true },
-          props: { defaultTab: 'iku' },
-        },
-        {
-          path: 'matriks',
-          name: 'publik.matriks',
-          component: () => import('@/pages/publik/PublikPage.vue'),
-          meta: { public: true },
-          props: { defaultTab: 'matriks' },
-        },
-        {
-          path: 'renaksi',
-          name: 'publik.renaksi',
-          component: () => import('@/pages/publik/PublikPage.vue'),
-          meta: { public: true },
-          props: { defaultTab: 'renaksi' },
-        },
-        {
-          path: 'sakip',
-          name: 'publik.sakip',
-          component: () => import('@/pages/publik/PublikPage.vue'),
-          meta: { public: true },
-          props: { defaultTab: 'sakip' },
         },
       ],
+    },
+    // Redirect old /publik to /
+    {
+      path: '/publik',
+      redirect: '/',
     },
     // Authenticated application routes
     {
@@ -138,10 +112,10 @@ router.beforeEach(async (to) => {
   if (to.meta.public) return true
 
   if (!authStore.isAuthenticated) {
-    if (to.path === '/iku') return '/publik?tab=iku'
-    if (to.path === '/iku/matriks') return '/publik?tab=matriks'
-    if (to.path === '/renaksi') return '/publik?tab=renaksi'
-    if (to.path === '/sakip') return '/publik?tab=sakip'
+    if (to.path === '/iku') return '/?tab=capaian_pk'
+    if (to.path === '/iku/matriks') return '/?tab=matriks'
+    if (to.path === '/renaksi') return '/?tab=renaksi'
+    if (to.path === '/sakip') return '/?tab=ikpa'
     return '/login'
   }
 

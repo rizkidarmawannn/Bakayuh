@@ -13,54 +13,44 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $kanwil = SatuanKerja::where('kode', 'KANWIL-KALSEL')->first();
-        $lapasBjm = SatuanKerja::where('kode', 'LP-BJM')->first();
 
-        // 1. Super Admin
-        User::firstOrCreate(
-            ['email' => 'superadmin@kemenkum.go.id'],
+        // 1. Admin Account
+        // username: admin | password: Kanwil123
+        User::updateOrCreate(
+            ['username' => 'admin'],
             [
-                'name' => 'Super Administrator',
-                'password' => Hash::make('password123'),
+                'name' => 'Administrator Kanwil',
+                'email' => 'admin@kemenkum.go.id',
+                'password' => Hash::make('Kanwil123'),
                 'role' => UserRole::SuperAdmin,
                 'satker_id' => $kanwil?->id,
                 'is_active' => true,
             ]
         );
 
-        // 2. Admin Kanwil (Verifikator)
-        User::firstOrCreate(
-            ['email' => 'verifikator@kemenkum.go.id'],
-            [
-                'name' => 'Tim Pengelola Kinerja & Verifikator RB',
-                'password' => Hash::make('password123'),
-                'role' => UserRole::AdminKanwil,
-                'satker_id' => $kanwil?->id,
-                'is_active' => true,
-            ]
-        );
+        // 2. 6 Unit Accounts
+        // username: ahu, ki, setjen, bsk, bhpn, pp | password: Daduk@2026
+        $unitAccounts = [
+            'ahu' => 'Administrasi Hukum Umum (AHU)',
+            'ki' => 'Kekayaan Intelektual (KI)',
+            'setjen' => 'Sekretariat Jenderal (Setjen)',
+            'bsk' => 'Badan Strategi Kebijakan (BSK)',
+            'bhpn' => 'Badan Pembinaan Hukum Nasional (BHPN)',
+            'pp' => 'Peraturan Perundang-undangan (PP)',
+        ];
 
-        // 3. Operator Satker (Lapas Banjarmasin)
-        User::firstOrCreate(
-            ['email' => 'operator.lpbjm@kemenkum.go.id'],
-            [
-                'name' => 'Operator Pokja Lapas Banjarmasin',
-                'password' => Hash::make('password123'),
-                'role' => UserRole::OperatorSatker,
-                'satker_id' => $lapasBjm?->id,
-                'is_active' => true,
-            ]
-        );
-
-        // 4. Viewer / Pimpinan
-        User::firstOrCreate(
-            ['email' => 'pimpinan@kemenkum.go.id'],
-            [
-                'name' => 'Kepala Kantor Wilayah',
-                'password' => Hash::make('password123'),
-                'role' => UserRole::Viewer,
-                'satker_id' => $kanwil?->id,
-                'is_active' => true,
-            ]
-        );
+        foreach ($unitAccounts as $uname => $label) {
+            User::updateOrCreate(
+                ['username' => $uname],
+                [
+                    'name' => 'Operator ' . $label,
+                    'email' => $uname . '@kemenkum.go.id',
+                    'password' => Hash::make('Daduk@2026'),
+                    'role' => UserRole::OperatorSatker,
+                    'satker_id' => $kanwil?->id,
+                    'is_active' => true,
+                ]
+            );
+        }
     }
 }

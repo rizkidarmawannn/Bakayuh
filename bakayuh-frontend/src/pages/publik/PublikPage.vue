@@ -11,11 +11,11 @@ import type {
   TahunAnggaran,
   StatusColor,
 } from '@/types'
-import SkeletonCard from '@/components/common/SkeletonCard.vue'
 import SkeletonTable from '@/components/common/SkeletonTable.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
 import { usePagination } from '@/composables/usePagination'
+import gedungKanwilUrl from '@/assets/gedung-kanwil.jpg'
 
 const props = defineProps<{
   defaultTab?: string
@@ -27,14 +27,21 @@ const router = useRouter()
 // ==========================================
 // Tab State (No Scroll Jump)
 // ==========================================
-type ActiveTab = 'iku' | 'matriks' | 'renaksi' | 'sakip'
+type ActiveTab = 'beranda' | 'iku' | 'matriks' | 'renaksi' | 'sakip' | 'pohon'
+
+function normalizeTab(rawTab?: string): ActiveTab {
+  if (!rawTab || rawTab === 'beranda') return 'beranda'
+  if (rawTab === 'pohon') return 'pohon'
+  if (rawTab === 'renaksi') return 'renaksi'
+  if (rawTab === 'capaian_pk' || rawTab === 'iku') return 'iku'
+  if (rawTab === 'matriks') return 'matriks'
+  if (rawTab === 'ikpa' || rawTab === 'sakip') return 'sakip'
+  return 'beranda'
+}
 
 const initialTab = computed<ActiveTab>(() => {
-  const qTab = (route.query.tab as string) || props.defaultTab || 'iku'
-  if (['iku', 'matriks', 'renaksi', 'sakip'].includes(qTab)) {
-    return qTab as ActiveTab
-  }
-  return 'iku'
+  const qTab = (route.query.tab as string) || props.defaultTab
+  return normalizeTab(qTab)
 })
 
 const activeTab = ref<ActiveTab>(initialTab.value)
@@ -42,22 +49,40 @@ const activeTab = ref<ActiveTab>(initialTab.value)
 watch(
   () => route.query.tab,
   (newTab) => {
-    if (newTab && ['iku', 'matriks', 'renaksi', 'sakip'].includes(newTab as string)) {
-      activeTab.value = newTab as ActiveTab
-    } else if (!newTab) {
-      activeTab.value = (props.defaultTab as ActiveTab) || 'iku'
-    }
+    activeTab.value = normalizeTab(newTab as string)
   }
 )
 
 function setTab(tab: ActiveTab) {
   activeTab.value = tab
-  router.replace({
-    query: {
-      ...route.query,
-      tab: tab === 'iku' ? undefined : tab,
-    },
-  })
+  if (tab === 'beranda') {
+    router.replace({ path: '/' })
+  } else {
+    router.replace({
+      path: '/',
+      query: {
+        ...route.query,
+        tab: tab === 'iku' ? 'capaian_pk' : (tab === 'sakip' ? 'ikpa' : tab),
+      },
+    })
+  }
+}
+
+function selectModule(tab: ActiveTab) {
+  setTab(tab)
+  setTimeout(() => {
+    const el = document.getElementById('modul-detail-panel')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, 60)
+}
+
+function scrollToModulKinerja() {
+  const el = document.getElementById('modul-kinerja')
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 }
 
 // ==========================================
@@ -349,144 +374,335 @@ onMounted(async () => {
 <template>
   <div class="space-y-8 animate-fade-in">
     <!-- Hero Banner (Government & Public Transparency Header) -->
-    <div class="rounded-2xl p-8 sm:p-10 bg-gradient-to-r from-kemenkum-navy via-[#0C2B64] to-[#12397F] text-white shadow-xl relative overflow-hidden">
+    <div class="rounded-3xl p-6 sm:p-8 lg:p-10 bg-[#0B2A6F] text-white shadow-xl relative overflow-hidden">
       <!-- Background subtle pattern -->
       <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
 
-      <div class="relative z-10 max-w-3xl">
-        <h1 class="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight">
-          Akuntabilitas Kinerja &amp; Reformasi Birokrasi
-        </h1>
-        <p class="text-sm sm:text-base text-kemenkum-silver/90 mt-2.5 leading-relaxed">
-          Portal transparansi resmi Kantor Wilayah Kementerian Hukum Kalimantan Selatan untuk menyajikan capaian indikator kinerja utama (IKU), rencana aksi triwulanan (Renaksi), dan evaluasi SAKIP seluruh satuan kerja binaan secara terbuka tanpa syarat login.
-        </p>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+        <!-- Left Column: Content -->
+        <div class="lg:col-span-7 flex flex-col items-start">
+          <!-- Pill Badge -->
+          <span class="inline-block px-3.5 py-1 rounded-lg bg-white text-[#0B2A6F] font-black text-xs uppercase tracking-wider mb-4 shadow-sm">
+            BAKAYUH
+          </span>
 
-        <!-- Global Year Selector in Hero -->
-        <div class="mt-6 flex flex-wrap items-center gap-3 pt-4 border-t border-white/10">
-          <span class="text-xs text-kemenkum-silver font-medium">Tahun Anggaran Terpilih:</span>
-          <div class="flex items-center gap-1.5">
-            <button
-              v-for="t in tahuns"
-              :key="t.id"
-              type="button"
-              class="px-3 py-1 rounded-lg text-xs font-bold transition-all border"
-              :class="selectedTahunId === t.id
-                ? 'bg-kemenkum-gold text-slate-950 border-kemenkum-gold shadow-sm'
-                : 'bg-white/10 text-white border-white/20 hover:bg-white/20'"
-              @click="selectedTahunId = t.id"
-            >
-              {{ t.tahun }}
-              <span v-if="t.is_aktif" class="text-[10px] ml-1 opacity-80">(Aktif)</span>
-            </button>
+          <!-- Title -->
+          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
+            Sistem Akuntabilitas Kinerja<br class="hidden sm:inline" />
+            Kantor Wilayah Kementerian<br class="hidden sm:inline" />
+            Hukum Kalimantan Selatan
+          </h1>
+
+          <!-- Subtext -->
+          <p class="text-xs sm:text-sm text-white/90 mt-4 leading-relaxed max-w-xl">
+            Aplikasi untuk memudahkan pemantauan dan pengendalian kinerja dalam rangka meningkatkan akuntabilitas dan kinerja unit kerja, mulai dari pohon kinerja, rencana aksi, capaian perjanjian kinerja, hingga pelaksanaan anggaran.
+          </p>
+
+          <!-- Button -->
+          <button
+            type="button"
+            @click="scrollToModulKinerja"
+            class="mt-6 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[#F9C823] hover:bg-amber-400 text-slate-950 transition-all shadow-md inline-flex items-center gap-2 group cursor-pointer"
+          >
+            <span>Eksplorasi Modul Kinerja</span>
+            <span class="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+          </button>
+
+          <!-- Global Year Selector in Hero -->
+          <div class="mt-6 flex flex-wrap items-center gap-2.5 pt-4 border-t border-white/10 w-full">
+            <span class="text-xs text-white/70 font-medium">Tahun Anggaran:</span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button
+                v-for="t in tahuns"
+                :key="t.id"
+                type="button"
+                class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all border"
+                :class="selectedTahunId === t.id
+                  ? 'bg-[#F9C823] text-slate-950 border-[#F9C823] shadow-sm'
+                  : 'bg-white/10 text-white border-white/20 hover:bg-white/20'"
+                @click="selectedTahunId = t.id"
+              >
+                {{ t.tahun }}
+                <span v-if="t.is_aktif" class="text-[10px] ml-1 opacity-80">(Aktif)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Building Photo -->
+        <div class="lg:col-span-5 flex justify-center lg:justify-end">
+          <div class="w-full max-w-md lg:max-w-none rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl border border-white/15 aspect-[16/10] bg-slate-900 group">
+            <img
+              :src="gedungKanwilUrl"
+              alt="Gedung Kantor Wilayah Kementerian Hukum Kalimantan Selatan"
+              class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+              loading="eager"
+            />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Public Highlights Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      <template v-if="summaryLoading">
-        <SkeletonCard v-for="i in 4" :key="i" :lines="2" />
-      </template>
+    <!-- SECTION: MODUL KINERJA (4 Clickable Cards - Strictly NO Emoji, NO Icon) -->
+    <div id="modul-kinerja" class="space-y-4 pt-4">
+      <div class="border-b border-slate-200 pb-3">
+        <h2 class="text-xl font-black text-slate-900 tracking-tight">
+          Modul Kinerja
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+          Pilih modul untuk melihat informasi kinerja terkini. Data diperbarui otomatis.
+        </p>
+      </div>
 
-      <template v-else-if="summary">
-        <!-- 1. Total Satker -->
-        <div class="card p-6 border-t-4 border-kemenkum-navy hover:shadow-md transition-shadow">
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Satuan Kerja Binaan</p>
-          <p class="text-3xl font-black text-kemenkum-navy mt-2">{{ summary.total_satker }}</p>
-          <p class="text-xs text-slate-500 mt-2">Lapas, Rutan, Kanim, Bapas, Rupbasan se-Kalsel</p>
+      <!-- 4 Clickable Cards Grid (No Emoji, No Icon) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- 1. Pohon Kinerja -->
+        <div
+          role="button"
+          tabindex="0"
+          @click="selectModule('pohon')"
+          @keydown.enter="selectModule('pohon')"
+          class="bg-white rounded-2xl p-6 border transition-all duration-200 cursor-pointer flex flex-col justify-between group hover:-translate-y-0.5 select-none"
+          :class="activeTab === 'pohon'
+            ? 'border-kemenkum-navy ring-2 ring-kemenkum-navy/20 shadow-md bg-gradient-to-b from-blue-50/40 to-white'
+            : 'border-slate-200 hover:border-slate-300 hover:shadow-card-hover'"
+        >
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-800">
+                01 &bull; Perencanaan
+              </span>
+              <span v-if="activeTab === 'pohon'" class="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                Aktif
+              </span>
+            </div>
+            <h3 class="text-base font-black text-slate-900 group-hover:text-blue-700 transition-colors">
+              Pohon Kinerja
+            </h3>
+            <p class="text-xs text-slate-600 mt-2.5 leading-relaxed">
+              Keterkaitan kinerja dari Kementerian, sasaran strategis, Eselon I, hingga Kantor Wilayah.
+            </p>
+          </div>
+          <div class="pt-4 mt-4 border-t border-dashed border-slate-200 flex items-center justify-between text-xs font-bold text-blue-600 group-hover:text-blue-800 transition-colors">
+            <span>Lihat selengkapnya</span>
+            <span>&rarr;</span>
+          </div>
         </div>
 
-        <!-- 2. Rata-rata IKU -->
-        <div class="card p-6 border-t-4 border-green-600 hover:shadow-md transition-shadow">
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Rata-rata Capaian IKU</p>
-          <p class="text-3xl font-black text-green-600 mt-2">{{ summary.rata_rata_capaian_iku.toFixed(1) }}%</p>
-          <p class="text-xs text-slate-500 mt-2">Kinerja organisasi tahun anggaran {{ summary.tahun }}</p>
+        <!-- 2. Renaksi -->
+        <div
+          role="button"
+          tabindex="0"
+          @click="selectModule('renaksi')"
+          @keydown.enter="selectModule('renaksi')"
+          class="bg-white rounded-2xl p-6 border transition-all duration-200 cursor-pointer flex flex-col justify-between group hover:-translate-y-0.5 select-none"
+          :class="activeTab === 'renaksi'
+            ? 'border-kemenkum-navy ring-2 ring-kemenkum-navy/20 shadow-md bg-gradient-to-b from-emerald-50/40 to-white'
+            : 'border-slate-200 hover:border-slate-300 hover:shadow-card-hover'"
+        >
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
+                02 &bull; Pelaksanaan
+              </span>
+              <span v-if="activeTab === 'renaksi'" class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                Aktif
+              </span>
+            </div>
+            <h3 class="text-base font-black text-slate-900 group-hover:text-emerald-700 transition-colors">
+              Renaksi
+            </h3>
+            <p class="text-xs text-slate-600 mt-2.5 leading-relaxed">
+              Progres rencana aksi dan pengumpulan data dukung tiap unit per triwulan.
+            </p>
+          </div>
+          <div class="pt-4 mt-4 border-t border-dashed border-slate-200 flex items-center justify-between text-xs font-bold text-blue-600 group-hover:text-blue-800 transition-colors">
+            <span>Lihat selengkapnya</span>
+            <span>&rarr;</span>
+          </div>
         </div>
 
-        <!-- 3. Nilai SAKIP Rerata -->
-        <div class="card p-6 border-t-4 border-blue-600 hover:shadow-md transition-shadow">
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Nilai SAKIP Rerata</p>
-          <p class="text-3xl font-black text-blue-600 mt-2">{{ summary.nilai_sakip_rerata ? summary.nilai_sakip_rerata.toFixed(2) : 'Belum Ada' }}</p>
-          <p class="text-xs text-slate-500 mt-2">Akuntabilitas kinerja instansi</p>
+        <!-- 3. Capaian PK -->
+        <div
+          role="button"
+          tabindex="0"
+          @click="selectModule('iku')"
+          @keydown.enter="selectModule('iku')"
+          class="bg-white rounded-2xl p-6 border transition-all duration-200 cursor-pointer flex flex-col justify-between group hover:-translate-y-0.5 select-none"
+          :class="activeTab === 'iku' || activeTab === 'matriks'
+            ? 'border-kemenkum-navy ring-2 ring-kemenkum-navy/20 shadow-md bg-gradient-to-b from-indigo-50/40 to-white'
+            : 'border-slate-200 hover:border-slate-300 hover:shadow-card-hover'"
+        >
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
+                03 &bull; Pengukuran
+              </span>
+              <span v-if="activeTab === 'iku' || activeTab === 'matriks'" class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                Aktif
+              </span>
+            </div>
+            <h3 class="text-base font-black text-slate-900 group-hover:text-indigo-700 transition-colors">
+              Capaian PK
+            </h3>
+            <p class="text-xs text-slate-600 mt-2.5 leading-relaxed">
+              Capaian kinerja atas Perjanjian Kinerja per bulan, lengkap dengan rekap triwulan dan semester.
+            </p>
+          </div>
+          <div class="pt-4 mt-4 border-t border-dashed border-slate-200 flex items-center justify-between text-xs font-bold text-blue-600 group-hover:text-blue-800 transition-colors">
+            <span>Lihat selengkapnya</span>
+            <span>&rarr;</span>
+          </div>
         </div>
 
-        <!-- 4. Komitmen ZI -->
-        <div class="card p-6 border-t-4 border-kemenkum-gold hover:shadow-md transition-shadow">
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pembangunan ZI</p>
-          <p class="text-base font-black text-kemenkum-gold mt-2">{{ summary.status_zi }}</p>
-          <p class="text-xs text-slate-500 mt-2">Wilayah Bebas dari Korupsi (WBK)</p>
+        <!-- 4. IKPA -->
+        <div
+          role="button"
+          tabindex="0"
+          @click="selectModule('sakip')"
+          @keydown.enter="selectModule('sakip')"
+          class="bg-white rounded-2xl p-6 border transition-all duration-200 cursor-pointer flex flex-col justify-between group hover:-translate-y-0.5 select-none"
+          :class="activeTab === 'sakip'
+            ? 'border-kemenkum-navy ring-2 ring-kemenkum-navy/20 shadow-md bg-gradient-to-b from-amber-50/40 to-white'
+            : 'border-slate-200 hover:border-slate-300 hover:shadow-card-hover'"
+        >
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-800">
+                04 &bull; Anggaran
+              </span>
+              <span v-if="activeTab === 'sakip'" class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                Aktif
+              </span>
+            </div>
+            <h3 class="text-base font-black text-slate-900 group-hover:text-amber-700 transition-colors">
+              IKPA
+            </h3>
+            <p class="text-xs text-slate-600 mt-2.5 leading-relaxed">
+              Indikator Kinerja Pelaksanaan Anggaran per satuan kerja per bulan.
+            </p>
+          </div>
+          <div class="pt-4 mt-4 border-t border-dashed border-slate-200 flex items-center justify-between text-xs font-bold text-blue-600 group-hover:text-blue-800 transition-colors">
+            <span>Lihat selengkapnya</span>
+            <span>&rarr;</span>
+          </div>
         </div>
-      </template>
+      </div>
     </div>
 
-    <!-- E-PERFORMANCE MODULE SELECTOR TABS -->
-    <div class="space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
+    <!-- ACTIVE MODULE DETAIL WRAPPER (Displayed when a module tab is selected) -->
+    <div v-if="activeTab !== 'beranda'" id="modul-detail-panel" class="space-y-4 pt-2">
+      <!-- In Capaian PK, provide quick sub-toggle between Target & Matriks -->
+      <div v-if="activeTab === 'iku' || activeTab === 'matriks'" class="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
         <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-blue-600" />
-          <h2 class="text-lg font-black text-slate-900 uppercase tracking-wider">
-            Modul E-Performance Terpadu
-          </h2>
+          <span class="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+          <h3 class="text-sm sm:text-base font-black text-slate-900 uppercase tracking-wider">
+            Capaian Perjanjian Kinerja
+          </h3>
         </div>
-
-        <!-- Tab Pills (4 E-Performance Modules Only) -->
-        <div class="flex items-center gap-1.5 flex-wrap">
+        <div class="flex items-center gap-1.5">
           <button
             type="button"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
             :class="activeTab === 'iku'
-              ? 'bg-kemenkum-navy text-white shadow-sm ring-1 ring-kemenkum-navy'
+              ? 'bg-kemenkum-navy text-white shadow-sm'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
             @click="setTab('iku')"
           >
-            <svg class="w-3.5 h-3.5 text-kemenkum-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
             Target &amp; Realisasi IKU
           </button>
-
           <button
             type="button"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
             :class="activeTab === 'matriks'
-              ? 'bg-kemenkum-navy text-white shadow-sm ring-1 ring-kemenkum-navy'
+              ? 'bg-kemenkum-navy text-white shadow-sm'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
             @click="setTab('matriks')"
           >
-            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
             Matriks Capaian IKU
           </button>
+        </div>
+      </div>
 
-          <button
-            type="button"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
-            :class="activeTab === 'renaksi'
-              ? 'bg-kemenkum-navy text-white shadow-sm ring-1 ring-kemenkum-navy'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
-            @click="setTab('renaksi')"
-          >
-            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            Rencana Aksi (Renaksi)
-          </button>
+      <!-- TAB CONTENT: 0. POHON KINERJA (Logic Model) -->
+      <div v-if="activeTab === 'pohon'" class="space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-8 space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-200 gap-3">
+            <div>
+              <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Modul Perencanaan Kinerja</span>
+              <h3 class="text-xl font-black text-slate-900 mt-1">Arsitektur Pohon Kinerja (Logic Model)</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Penyelarasan mandat perundang-undangan dan sasaran strategis Kanwil Kementerian Hukum Kalimantan Selatan</p>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold self-start sm:self-auto">
+              <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+              17 Satker Terkoneksi
+            </span>
+          </div>
 
-          <button
-            type="button"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
-            :class="activeTab === 'sakip'
-              ? 'bg-kemenkum-navy text-white shadow-sm ring-1 ring-kemenkum-navy'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
-            @click="setTab('sakip')"
-          >
-            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-            </svg>
-            Evaluasi SAKIP
-          </button>
+          <!-- 3-Tier Logic Model Breakdown -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- Level 1: Ultimate Outcome -->
+            <div class="p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200 hover:shadow-md transition-shadow">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-blue-100 text-blue-800">Tingkat 1 &bull; Impact</span>
+                <span class="text-xs font-bold text-slate-400">Outcome Utama</span>
+              </div>
+              <h4 class="text-sm font-black text-slate-900 leading-snug">Kepastian Hukum &amp; Pelayanan Publik Berkualitas</h4>
+              <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                Terwujudnya supremasi hukum yang berkeadilan, penegakan HAM, kepastian hukum keimigrasian &amp; pemasyarakatan yang humanis di wilayah Kalimantan Selatan.
+              </p>
+              <div class="mt-4 pt-3 border-t border-slate-200/70 text-[11px] text-slate-500">
+                <span class="font-bold text-slate-700">Indikator Kunci:</span> Indeks Kepuasan Masyarakat (IKM), Indeks Reformasi Hukum (IRH).
+              </div>
+            </div>
+
+            <!-- Level 2: Intermediate Outcome -->
+            <div class="p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-amber-50/40 border border-slate-200 hover:shadow-md transition-shadow">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-800">Tingkat 2 &bull; Intermediate</span>
+                <span class="text-xs font-bold text-slate-400">Sasaran Program</span>
+              </div>
+              <h4 class="text-sm font-black text-slate-900 leading-snug">Akuntabilitas &amp; Reformasi Birokrasi Satker Binaan</h4>
+              <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                Optimalisasi tata kelola birokrasi berintegritas tinggi bebas korupsi (WBK/WBBM) dan peningkatan maturitas SPIP di seluruh 17 Unit Pelaksana Teknis se-Kalsel.
+              </p>
+              <div class="mt-4 pt-3 border-t border-slate-200/70 text-[11px] text-slate-500">
+                <span class="font-bold text-slate-700">Indikator Kunci:</span> Nilai Evaluasi SAKIP &ge; BB, Predikat WBK/WBBM Satker.
+              </div>
+            </div>
+
+            <!-- Level 3: Output & Activities -->
+            <div class="p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-emerald-50/40 border border-slate-200 hover:shadow-md transition-shadow">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Tingkat 3 &bull; Output</span>
+                <span class="text-xs font-bold text-slate-400">Rencana Aksi</span>
+              </div>
+              <h4 class="text-sm font-black text-slate-900 leading-snug">Pelaksanaan Rencana Aksi Triwulanan Terukur</h4>
+              <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                Realisasi rencana aksi kinerja secara bertahap mulai dari TW I hingga TW IV dengan verifikasi kelayakan bukti dukung 100% tepat waktu.
+              </p>
+              <div class="mt-4 pt-3 border-t border-slate-200/70 text-[11px] text-slate-500">
+                <span class="font-bold text-slate-700">Indikator Kunci:</span> Kepatuhan Upload Renaksi &ge; 95%, Capaian Output Terverifikasi.
+              </div>
+            </div>
+          </div>
+
+          <!-- Cascading Action Banner -->
+          <div class="p-5 bg-gradient-to-r from-kemenkum-navy to-slate-900 text-white rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="space-y-1">
+              <h4 class="text-sm font-bold text-kemenkum-gold">Penyelarasan Cascading Target Perjanjian Kinerja</h4>
+              <p class="text-xs text-slate-300">
+                Setiap sasaran strategis Kantor Wilayah diturunkan menjadi target Indikator Kinerja Utama (IKU) dan Perjanjian Kinerja (PK) tahunan pada seluruh satuan kerja binaan.
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="setTab('iku')"
+              class="px-4 py-2 rounded-xl text-xs font-bold bg-[#F9C823] text-slate-950 hover:bg-amber-400 transition-colors shadow flex-shrink-0"
+            >
+              Lihat Capaian PK &rarr;
+            </button>
+          </div>
         </div>
       </div>
 

@@ -51,11 +51,11 @@ async function handleLogout() {
         >
           <LogoPengayoman :size="38" :show-text="false" class="group-hover:scale-105 transition-transform duration-150" />
           <div class="flex flex-col">
-            <span class="text-white font-extrabold text-sm sm:text-base leading-tight tracking-wider group-hover:text-kemenkum-gold transition-colors">
-              KEMENTERIAN HUKUM
+            <span class="text-white font-extrabold text-base tracking-wider group-hover:text-kemenkum-gold transition-colors leading-none">
+              BAKAYUH
             </span>
-            <span class="text-kemenkum-silver text-[11px] sm:text-xs font-medium leading-tight tracking-wider">
-              KANTOR WILAYAH KALIMANTAN SELATAN
+            <span class="text-kemenkum-silver text-[11px] font-medium leading-tight tracking-normal mt-1">
+              Kanwil Kementerian Hukum Kalimantan Selatan
             </span>
           </div>
         </RouterLink>

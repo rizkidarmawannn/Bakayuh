@@ -11,7 +11,7 @@ const authStore = useAuthStore()
 const { error: toastError, success: toastSuccess } = useToast()
 
 const form = reactive({
-  email: '',
+  username: '',
   password: '',
 })
 
@@ -24,7 +24,11 @@ async function handleLogin() {
   Object.keys(errors).forEach((k) => delete errors[k])
 
   try {
-    await authStore.login(form)
+    await authStore.login({
+      username: form.username.trim(),
+      email: form.username.trim(),
+      password: form.password,
+    })
     toastSuccess('Login Berhasil', `Selamat datang, ${authStore.user?.name}!`)
     router.replace('/dashboard')
   } catch (err: any) {
@@ -32,16 +36,16 @@ async function handleLogin() {
     if (Object.keys(extracted).length) {
       Object.assign(errors, extracted)
     } else {
-      toastError('Login Gagal', err.response?.data?.message ?? 'Email atau password yang Anda masukkan salah.')
+      toastError('Login Gagal', err.response?.data?.message ?? 'Username atau password yang Anda masukkan salah.')
     }
   } finally {
     loading.value = false
   }
 }
 
-function fillDemo(email: string) {
-  form.email = email
-  form.password = 'password123'
+function fillDemo(username: string, pass: string) {
+  form.username = username
+  form.password = pass
 }
 </script>
 
@@ -69,18 +73,20 @@ function fillDemo(email: string) {
         <p class="text-xs text-slate-500 mb-5">Gunakan akun Kemenkum yang telah terdaftar</p>
 
         <form @submit.prevent="handleLogin" class="space-y-4">
-          <!-- Email Input -->
+          <!-- Username / Email Input -->
           <div>
-            <label class="form-label text-xs">Alamat Email</label>
+            <label class="form-label text-xs">Username atau Email</label>
             <input
-              v-model="form.email"
-              type="email"
+              v-model="form.username"
+              type="text"
               required
               class="form-input"
-              placeholder="nama@kemenkum.go.id"
-              autocomplete="email"
+              placeholder="Contoh: admin atau ahu"
+              autocomplete="username"
             />
-            <p v-if="errors.email" class="text-xs text-red-600 mt-1">{{ errors.email }}</p>
+            <p v-if="errors.username || errors.email" class="text-xs text-red-600 mt-1">
+              {{ errors.username || errors.email }}
+            </p>
           </div>
 
           <!-- Password Input -->
@@ -122,36 +128,38 @@ function fillDemo(email: string) {
 
         <!-- Quick Demo Accounts for testing -->
         <div class="mt-6 pt-4 border-t border-slate-100">
-          <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Akun Demo Pengujian:</p>
-          <div class="grid grid-cols-3 gap-2 text-xs">
+          <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Akun Pengujian Sistem:</p>
+          <div class="space-y-2">
+            <!-- Admin -->
             <button
               type="button"
-              @click="fillDemo('superadmin@kemenkum.go.id')"
-              class="px-2 py-1 text-left bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 text-slate-700 truncate"
+              @click="fillDemo('admin', 'Kanwil123')"
+              class="w-full px-3 py-1.5 text-left bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-700 flex items-center justify-between text-xs"
             >
-              👑 Super Admin
+              <span class="font-bold text-slate-800">admin</span>
+              <span class="text-[11px] text-slate-500 font-mono">Kanwil123</span>
             </button>
-            <button
-              type="button"
-              @click="fillDemo('verifikator@kemenkum.go.id')"
-              class="px-2 py-1 text-left bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 text-slate-700 truncate"
-            >
-              🔍 Verifikator Kanwil
-            </button>
-            <button
-              type="button"
-              @click="fillDemo('operator.lpbjm@kemenkum.go.id')"
-              class="px-2 py-1 text-left bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 text-slate-700 truncate"
-            >
-              🏢 Operator Satker
-            </button>
+
+            <!-- 6 Unit Accounts -->
+            <div class="grid grid-cols-3 gap-1.5 pt-1">
+              <button
+                v-for="u in ['ahu', 'ki', 'setjen', 'bsk', 'bhpn', 'pp']"
+                :key="u"
+                type="button"
+                @click="fillDemo(u, 'Daduk@2026')"
+                class="px-2 py-1 text-center bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 text-xs text-slate-700 font-semibold uppercase hover:border-slate-300"
+              >
+                {{ u }}
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-400 text-center">Password unit: <code class="text-slate-600 font-mono">Daduk@2026</code></p>
           </div>
         </div>
       </div>
 
       <!-- Public Portal Link -->
       <div class="text-center mt-5">
-        <RouterLink to="/publik" class="text-xs text-kemenkum-silver hover:text-white transition-colors underline">
+        <RouterLink to="/" class="text-xs text-kemenkum-silver hover:text-white transition-colors underline">
           &larr; Lihat Portal Transparansi Publik (Tanpa Login)
         </RouterLink>
       </div>

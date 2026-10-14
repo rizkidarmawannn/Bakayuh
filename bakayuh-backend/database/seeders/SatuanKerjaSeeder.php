@@ -11,7 +11,7 @@ class SatuanKerjaSeeder extends Seeder
     public function run(): void
     {
         $satkers = [
-            ['kode' => 'KANWIL-KALSEN', 'nama' => 'Kantor Wilayah Kemenkum Kalimantan Selatan', 'tipe' => TipeSatker::Kanwil],
+            ['kode' => 'KANWIL-KALSEL', 'nama' => 'Kantor Wilayah Kemenkum Kalimantan Selatan', 'tipe' => TipeSatker::Kanwil],
             ['kode' => 'LP-BJM', 'nama' => 'Lapas Kelas IIA Banjarmasin', 'tipe' => TipeSatker::Upt],
             ['kode' => 'LP-NKR-BJM', 'nama' => 'Lapas Narkotika Kelas IIA Karang Intan', 'tipe' => TipeSatker::Upt],
             ['kode' => 'LP-KOTABARU', 'nama' => 'Lapas Kelas IIA Kotabaru', 'tipe' => TipeSatker::Upt],

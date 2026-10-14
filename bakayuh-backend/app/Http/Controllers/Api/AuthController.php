@@ -13,21 +13,36 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'username' => 'nullable|string',
+            'email' => 'nullable|string',
+            'login' => 'nullable|string',
             'password' => 'required|string',
         ]);
 
-        $user = User::with('satker')->where('email', $request->email)->first();
+        $loginInput = $request->input('username') ?? $request->input('login') ?? $request->input('email');
+
+        if (empty($loginInput)) {
+            throw ValidationException::withMessages([
+                'username' => ['Username atau email wajib diisi.'],
+            ]);
+        }
+
+        $user = User::with('satker')
+            ->where(function ($query) use ($loginInput) {
+                $query->where('username', $loginInput)
+                      ->orWhere('email', $loginInput);
+            })
+            ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Kombinasi email dan password tidak sesuai.'],
+                'username' => ['Kombinasi username/email dan password tidak sesuai.'],
             ]);
         }
 
         if (! $user->is_active) {
             throw ValidationException::withMessages([
-                'email' => ['Akun Anda sedang dinonaktifkan. Silakan hubungi Super Admin.'],
+                'username' => ['Akun Anda sedang dinonaktifkan. Silakan hubungi Super Admin.'],
             ]);
         }
 
@@ -41,6 +56,7 @@ class AuthController extends Controller
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
+                    'username' => $user->username,
                     'email' => $user->email,
                     'role' => $user->role->value,
                     'role_label' => $user->role->label(),
@@ -60,6 +76,7 @@ class AuthController extends Controller
             'data' => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'username' => $user->username,
                 'email' => $user->email,
                 'role' => $user->role->value,
                 'role_label' => $user->role->label(),

@@ -24,7 +24,7 @@ withDefaults(
     <img
       :src="logoPengayomanUrl"
       alt="Logo Pengayoman Kementerian Hukum"
-      class="w-full h-full object-contain rounded-lg shadow-sm"
+      class="w-full h-full object-contain"
       loading="eager"
     />
   </div>
