@@ -129,6 +129,13 @@ Pastikan telah menginstal:
    ```
    *(Secara bawaan menggunakan database SQLite lokal. Jika menggunakan MySQL, sesuaikan nilai `DB_*` di dalam file `.env` terlebih dahulu).*
 
+   > **Catatan Alternatif (MySQL Dump):**  
+   > Tersedia berkas dump database terbaru di root direktori proyek (`bakayuh.sql`) yang dapat langsung diimpor ke MySQL:
+   > ```bash
+   > mysql -u <username> -p < bakayuh.sql
+   > ```
+
+
 6. Generate dokumentasi Swagger (opsional jika ada pembaruan route API):
    ```bash
    php artisan l5-swagger:generate
