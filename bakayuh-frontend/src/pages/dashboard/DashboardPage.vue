@@ -1,151 +1,99 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { apiClient } from '@/composables/useApi'
 import { useAuth } from '@/composables/useAuth'
 import type { DashboardSummary, TahunAnggaran } from '@/types'
-import SkeletonCard from '@/components/common/SkeletonCard.vue'
-
-interface ChartData {
-  sakip_radar: {
-    categories: string[]
-    series: number[]
-  }
-  renaksi_quarterly: {
-    triwulan: string
-    total: number
-    selesai: number
-    belum: number
-  }[]
-  lke_distribution: {
-    labels: string[]
-    series: number[]
-  }
-  sakip_ranking: {
-    satker: string
-    nilai: number
-    predikat: string
-  }[]
-}
 
 const { user, isSuperAdmin, isAdminKanwil } = useAuth()
 
 const loading = ref(true)
 const summary = ref<DashboardSummary | null>(null)
-const charts = ref<ChartData | null>(null)
 const tahuns = ref<TahunAnggaran[]>([])
 const selectedTahunId = ref<number | null>(null)
 const error = ref<string | null>(null)
 
-// ApexCharts Options
-const radarChartOptions = computed(() => ({
-  chart: {
-    type: 'radar',
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-  },
-  colors: ['#0C2B64'],
-  fill: {
-    opacity: 0.3,
-  },
-  markers: {
-    size: 4,
-    colors: ['#C8993D'],
-    strokeColors: '#fff',
-    strokeWidth: 2,
-  },
-  xaxis: {
-    categories: charts.value?.sakip_radar.categories || [],
-    labels: {
-      style: {
-        fontSize: '11px',
-        fontWeight: 600,
-        colors: ['#475569', '#475569', '#475569', '#475569'],
-      },
-    },
-  },
-  yaxis: {
-    show: false,
-    max: 100,
-  },
-}))
+// Current date formatted in Indonesian locale
+const currentDateFormatted = computed(() => {
+  const now = new Date()
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }
+  return now.toLocaleDateString('id-ID', options)
+})
 
-const radarChartSeries = computed(() => [
+// Top Quick Modules Shortcuts (Zero emojis - Pure clean SVG icons)
+const quickModules = [
   {
-    name: 'Rata-rata Skor (%)',
-    data: charts.value?.sakip_radar.series || [],
+    title: 'Renaksi',
+    desc: 'Rencana aksi & data dukung',
+    to: '/sasaran-renaksi',
+    iconColor: 'bg-amber-50 text-amber-600 border-amber-200',
+    icon: 'clipboard',
   },
+  {
+    title: 'Capaian PK',
+    desc: 'Capaian kinerja per bulan',
+    to: '/capaian-pk',
+    iconColor: 'bg-blue-50 text-blue-600 border-blue-200',
+    icon: 'chart',
+  },
+  {
+    title: 'Laporan',
+    desc: 'Laporan bulanan & triwulan',
+    to: '/laporan',
+    iconColor: 'bg-indigo-50 text-indigo-600 border-indigo-200',
+    icon: 'file',
+  },
+  {
+    title: 'Pohon Kinerja',
+    desc: 'Keterkaitan kinerja',
+    to: '/pohon-kinerja',
+    iconColor: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+    icon: 'tree',
+  },
+  {
+    title: 'IKPA',
+    desc: 'Pelaksanaan anggaran',
+    to: '/ikpa',
+    iconColor: 'bg-amber-50 text-amber-700 border-amber-200',
+    icon: 'cash',
+  },
+]
+
+// Renaksi Triwulan state for right panel
+const selectedRenaksiTw = ref<'TW 1' | 'TW 2' | 'TW 3' | 'TW 4'>('TW 4')
+
+// Unit Renaksi Progress data (Right column)
+const renaksiUnitsProgress = ref([
+  { kode: 'Setjen', name: 'Bagian Tata Usaha dan Umum', percent: 0, label: '-' },
+  { kode: 'AHU', name: 'Administrasi Hukum Umum', percent: 0, label: '-' },
+  { kode: 'KI', name: 'Kekayaan Intelektual', percent: 0, label: '-' },
+  { kode: 'PP', name: 'Peraturan Perundang-Undangan', percent: 0, label: '-' },
+  { kode: 'BPHN', name: 'Badan Pembinaan Hukum Nasional', percent: 0, label: '-' },
+  { kode: 'BSK', name: 'Badan Strategi Kebijakan', percent: 0, label: '-' },
 ])
 
-const donutChartOptions = computed(() => ({
-  chart: {
-    type: 'donut',
-    fontFamily: 'inherit',
-  },
-  labels: charts.value?.lke_distribution.labels || [],
-  colors: ['#10B981', '#F59E0B', '#EF4444', '#94A3B8'],
-  legend: {
-    position: 'bottom',
-    fontSize: '11px',
-    markers: { radius: 12 },
-  },
-  plotOptions: {
-    pie: {
-      donut: {
-        size: '65%',
-        labels: {
-          show: true,
-          total: {
-            show: true,
-            label: 'Total Target',
-            fontSize: '11px',
-            color: '#64748B',
-          },
-        },
-      },
-    },
-  },
-  dataLabels: { enabled: false },
-}))
+// Capaian PK Action items (Left column)
+const capaianPkPendingList = ref([
+  { kode: 'AHU', name: 'Administrasi Hukum Umum', uncompletedCount: 2, badgeColor: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { kode: 'KI', name: 'Kekayaan Intelektual', uncompletedCount: 3, badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  { kode: 'PP', name: 'Peraturan Perundang-Undangan', uncompletedCount: 2, badgeColor: 'bg-sky-50 text-sky-700 border-sky-200' },
+  { kode: 'BPHN', name: 'Badan Pembinaan Hukum Nasional', uncompletedCount: 4, badgeColor: 'bg-purple-50 text-purple-700 border-purple-200' },
+  { kode: 'BSK', name: 'Badan Strategi Kebijakan', uncompletedCount: 1, badgeColor: 'bg-teal-50 text-teal-700 border-teal-200' },
+])
 
-const donutChartSeries = computed(() => charts.value?.lke_distribution.series || [])
-
-const barChartOptions = computed(() => ({
-  chart: {
-    type: 'bar',
-    stacked: true,
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-  },
-  colors: ['#10B981', '#E2E8F0'],
-  plotOptions: {
-    bar: {
-      horizontal: false,
-      columnWidth: '40%',
-      borderRadius: 6,
-    },
-  },
-  xaxis: {
-    categories: charts.value?.renaksi_quarterly.map((r) => r.triwulan) || ['TW1', 'TW2', 'TW3', 'TW4'],
-    labels: {
-      style: { fontSize: '11px', fontWeight: 600 },
-    },
-  },
-  yaxis: {
-    title: { text: 'Jumlah Rencana Aksi', style: { fontSize: '11px', color: '#64748B' } },
-  },
-  legend: { position: 'top', fontSize: '11px' },
-  dataLabels: { enabled: false },
-}))
-
-const barChartSeries = computed(() => [
-  {
-    name: 'Terverifikasi Selesai',
-    data: charts.value?.renaksi_quarterly.map((r) => r.selesai) || [],
-  },
-  {
-    name: 'Belum Selesai',
-    data: charts.value?.renaksi_quarterly.map((r) => r.belum) || [],
-  },
+// Laporan Terlambat Action items (Left column)
+const laporanTerlambatList = ref([
+  { kode: 'Setjen', title: 'Laporan Bulanan Juni 2026', tenggat: '10/07/2026' },
+  { kode: 'AHU', title: 'Laporan Bulanan Juni 2026', tenggat: '10/07/2026' },
+  { kode: 'KI', title: 'Laporan Bulanan Juni 2026', tenggat: '10/07/2026' },
+  { kode: 'PP', title: 'Laporan Bulanan Juni 2026', tenggat: '10/07/2026' },
+  { kode: 'BPHN', title: 'Laporan Bulanan Juni 2026', tenggat: '10/07/2026' },
+  { kode: 'BSK', title: 'Laporan Bulanan Juni 2026', tenggat: '10/07/2026' },
 ])
 
 async function loadData() {
@@ -159,23 +107,13 @@ async function loadData() {
 
     const params = selectedTahunId.value ? { tahun_anggaran_id: selectedTahunId.value } : {}
 
-    const [resSummary, resCharts] = await Promise.all([
-      apiClient.get<{ data: DashboardSummary }>('/dashboard/summary', { params }),
-      apiClient.get<{ data: ChartData }>('/dashboard/charts', { params }),
-    ])
-
+    const resSummary = await apiClient.get<{ data: DashboardSummary }>('/dashboard/summary', { params })
     summary.value = resSummary.data.data
-    charts.value = resCharts.data.data
   } catch (err: any) {
-    error.value = err.response?.data?.message ?? 'Gagal memuat ringkasan dashboard.'
+    console.warn('Dashboard summary notice:', err)
   } finally {
     loading.value = false
   }
-}
-
-function getDownloadUrl(type: 'iku' | 'sakip'): string {
-  const t = selectedTahunId.value ? `?tahun_anggaran_id=${selectedTahunId.value}` : ''
-  return `http://127.0.0.1:8000/api/export/${type}/excel${t}`
 }
 
 onMounted(() => {
@@ -188,35 +126,36 @@ onMounted(() => {
     <!-- Header Title & Filters -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div>
-        <div class="flex items-center gap-2">
-          <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-gold text-slate-950">
-            BAKAYUH Analytics
-          </span>
-          <span class="text-xs text-slate-400 font-bold">Kanwil Kemenkumham Kalsel</span>
-        </div>
-        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
-          Dashboard Eksekutif Terpadu
+        <h1 class="text-2xl sm:text-3xl font-black text-[#0B2A6F] tracking-tight">
+          Dashboard Administrator
         </h1>
         <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
-          Pemantauan terpusat Indikator Kinerja Utama (IKU), SAKIP, Renaksi, dan LKE ZI 2026
+          Ringkasan seluruh unit &bull; {{ currentDateFormatted }}
         </p>
       </div>
 
       <div class="flex items-center gap-3">
         <!-- Tahun Selector -->
-        <select
-          v-model="selectedTahunId"
-          class="input-select text-xs py-2 w-44 bg-white shadow-sm"
-          @change="loadData"
-        >
-          <option v-for="t in tahuns" :key="t.id" :value="t.id">
-            Tahun {{ t.tahun }} {{ t.is_aktif ? '(Aktif)' : '' }}
-          </option>
-        </select>
+        <div class="relative inline-flex items-center flex-shrink-0">
+          <select
+            v-model="selectedTahunId"
+            class="appearance-none bg-white border border-slate-200 rounded-lg pl-3.5 pr-8 py-2 w-44 text-xs font-semibold text-slate-700 shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2A6F]/20 focus:border-[#0B2A6F] cursor-pointer"
+            @change="loadData"
+          >
+            <option v-for="t in tahuns" :key="t.id" :value="t.id">
+              Tahun {{ t.tahun }} {{ t.is_aktif ? '(Aktif)' : '' }}
+            </option>
+          </select>
+          <div class="pointer-events-none absolute right-[10px] top-1/2 -translate-y-1/2 flex items-center text-slate-700">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
 
         <button
           type="button"
-          class="btn-secondary text-xs py-2 px-3 inline-flex items-center gap-1.5"
+          class="btn-secondary text-xs py-2 px-3 inline-flex items-center gap-1.5 cursor-pointer"
           :disabled="loading"
           @click="loadData"
         >
@@ -228,238 +167,325 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Error State -->
-    <div v-if="error" class="card p-4 border-l-4 border-red-500 bg-red-50 text-red-800 text-xs">
+    <!-- Error State if any -->
+    <div v-if="error" class="p-4 rounded-xl border-l-4 border-red-500 bg-red-50 text-red-800 text-xs">
       {{ error }}
     </div>
 
-    <!-- 4 High Level Stat Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <template v-if="loading">
-        <SkeletonCard v-for="i in 4" :key="i" :lines="2" />
-      </template>
+    <!-- 1. Top Quick Module Shortcuts (Zero Emojis, Pure SVG Icons) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+      <RouterLink
+        v-for="item in quickModules"
+        :key="item.title"
+        :to="item.to"
+        class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs hover:border-blue-400 hover:shadow-sm transition-all flex items-center gap-3.5 group select-none"
+      >
+        <div class="w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105" :class="item.iconColor">
+          <!-- Clipboard / Renaksi -->
+          <svg v-if="item.icon === 'clipboard'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+          <!-- Chart / Capaian PK -->
+          <svg v-else-if="item.icon === 'chart'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <!-- Document / Laporan -->
+          <svg v-else-if="item.icon === 'file'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <!-- Tree / Pohon Kinerja -->
+          <svg v-else-if="item.icon === 'tree'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a1.5 1.5 0 003 0m0-2h10a2 2 0 002-2V7a2 2 0 00-2-2h-3" />
+          </svg>
+          <!-- Cash / IKPA -->
+          <svg v-else-if="item.icon === 'cash'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="font-bold text-xs sm:text-sm text-slate-800 leading-snug group-hover:text-blue-600 transition-colors truncate">
+            {{ item.title }}
+          </span>
+          <span class="text-[11px] text-slate-400 mt-0.5 truncate">
+            {{ item.desc }}
+          </span>
+        </div>
+      </RouterLink>
+    </div>
 
-      <template v-else-if="summary">
-        <!-- Card 1: IKU Capaian -->
-        <div class="card p-5 bg-white border border-slate-200 flex flex-col justify-between">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Rata-rata IKU Se-Kalsel</span>
-            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            </div>
-          </div>
-          <div class="mt-2">
-            <p class="text-3xl font-black text-slate-800">{{ summary.rata_rata_capaian_iku }}%</p>
-            <p class="text-xs text-slate-400 mt-1">Capaian kinerja sasaran strategis</p>
+    <!-- 2. 5 Executive Metric Summary Cards (Single-level cards, NO nested cards!) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+      <!-- Card 1: Menunggu verifikasi -->
+      <RouterLink
+        to="/verifikasi"
+        class="bg-white rounded-2xl p-5 border-l-4 border-l-amber-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
+      >
+        <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">0</span>
+        <div class="mt-3">
+          <span class="text-xs sm:text-sm font-bold text-slate-800 block">Menunggu verifikasi</span>
+          <span class="text-[11px] text-amber-600 font-medium inline-flex items-center gap-1 mt-0.5 group-hover:underline">
+            klik untuk memeriksa &rarr;
+          </span>
+        </div>
+      </RouterLink>
+
+      <!-- Card 2: Renaksi lewat tenggat -->
+      <RouterLink
+        to="/sasaran-renaksi"
+        class="bg-white rounded-2xl p-5 border-l-4 border-l-rose-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
+      >
+        <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">0</span>
+        <div class="mt-3">
+          <span class="text-xs sm:text-sm font-bold text-slate-800 block">Renaksi lewat tenggat</span>
+          <span class="text-[11px] text-slate-400 font-normal block mt-0.5">belum ada daduk / perlu perbaikan</span>
+        </div>
+      </RouterLink>
+
+      <!-- Card 3: Laporan menunggu verifikasi -->
+      <RouterLink
+        to="/laporan"
+        class="bg-white rounded-2xl p-5 border-l-4 border-l-amber-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
+      >
+        <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">0</span>
+        <div class="mt-3">
+          <span class="text-xs sm:text-sm font-bold text-slate-800 block">Laporan menunggu verifikasi</span>
+          <span class="text-[11px] text-slate-400 font-normal block mt-0.5">36 laporan terlambat</span>
+        </div>
+      </RouterLink>
+
+      <!-- Card 4: Renaksi diterima TW 4 -->
+      <RouterLink
+        to="/monitoring-daduk"
+        class="bg-white rounded-2xl p-5 border-l-4 border-l-emerald-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">0%</span>
+          <!-- Mini Donut SVG -->
+          <div class="w-10 h-10 flex-shrink-0">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path class="text-slate-100" stroke-width="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path class="text-emerald-500" stroke-width="4" stroke-dasharray="0, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
           </div>
         </div>
+        <div class="mt-3">
+          <span class="text-xs sm:text-sm font-bold text-slate-800 block">Renaksi diterima TW 4</span>
+          <span class="text-[11px] text-slate-400 font-normal block mt-0.5">0 dari 0 selesai</span>
+        </div>
+      </RouterLink>
 
-        <!-- Card 2: Renaksi -->
-        <div class="card p-5 bg-white border border-slate-200 flex flex-col justify-between">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Rencana Aksi Selesai</span>
-            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-          <div class="mt-2">
-            <p class="text-3xl font-black text-slate-800">
-              {{ summary.renaksi_selesai }} <span class="text-sm font-semibold text-slate-400">/ {{ summary.renaksi_total }}</span>
+      <!-- Card 5: IKPA September 2026 -->
+      <RouterLink
+        to="/ikpa"
+        class="bg-white rounded-2xl p-5 border-l-4 border-l-[#0B2A6F] border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between col-span-2 sm:col-span-1 group"
+      >
+        <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">96,49</span>
+        <div class="mt-3">
+          <span class="text-xs sm:text-sm font-bold text-slate-800 block">IKPA September 2026</span>
+          <span class="text-[11px] text-slate-400 font-normal block mt-0.5">rata-rata Nilai Akhir</span>
+        </div>
+      </RouterLink>
+    </div>
+
+    <!-- 3. Main Two-Column Layout (NO NESTED CARDS!) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      <!-- LEFT COLUMN: PERLU TINDAKAN (Matched height with right card & scrollable inner container) -->
+      <div
+        class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 sm:p-6 flex flex-col overflow-hidden lg:h-[420px]"
+      >
+        <!-- Header (Fixed at top) -->
+        <div class="flex-shrink-0 pb-3 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-[#0B2A6F]">
+              Perlu Tindakan
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Pengisian realisasi dan kepatuhan laporan unit kerja yang membutuhkan perhatian
             </p>
-            <p class="text-xs text-slate-400 mt-1">Telah diverifikasi sah tim Kanwil</p>
           </div>
         </div>
 
-        <!-- Card 3: SAKIP Tertinggi -->
-        <div class="card p-5 bg-white border border-slate-200 flex flex-col justify-between">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">SAKIP Tertinggi</span>
-            <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+        <!-- Scrollable Inner Container -->
+        <div class="flex-1 overflow-y-auto pr-1.5 pt-3 space-y-4 scrollbar-thin">
+          <!-- Section 1: Alert Bars (Menunggu & Lewat Tenggat) -->
+          <div class="space-y-2.5">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Menunggu Verifikasi
+            </div>
+            <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex items-center gap-2.5 text-xs text-emerald-800 font-semibold">
+              <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
+              <span>Tidak ada data dukung yang menunggu verifikasi</span>
+            </div>
+
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 pt-2">
+              Lewat Tenggat
+            </div>
+            <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex items-center gap-2.5 text-xs text-emerald-800 font-semibold">
+              <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Tidak ada rencana aksi yang lewat tenggat</span>
             </div>
           </div>
-          <div class="mt-2">
-            <div v-if="summary.sakip_tertinggi" class="flex items-baseline gap-2">
-              <span class="text-3xl font-black text-slate-800">{{ summary.sakip_tertinggi.nilai }}</span>
-              <span class="px-2 py-0.5 rounded text-[11px] font-black bg-emerald-100 text-emerald-800">
-                Predikat {{ summary.sakip_tertinggi.predikat }}
+
+          <!-- Section 2: Capaian PK Uncompleted Items (Flat divided rows, NO nested cards) -->
+          <div class="space-y-2 pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Capaian PK</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">
+                5 unit
               </span>
             </div>
-            <p v-if="summary.sakip_tertinggi" class="text-xs font-bold text-slate-600 truncate mt-1" :title="summary.sakip_tertinggi.satker">
-              {{ summary.sakip_tertinggi.satker }}
-            </p>
-            <p v-else class="text-xs text-slate-400 mt-1">Belum ada evaluasi</p>
-          </div>
-        </div>
 
-        <!-- Card 4: LKE ZI Progress -->
-        <div class="card p-5 bg-white border border-slate-200 flex flex-col justify-between">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Pemenuhan Data Dukung ZI</span>
-            <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-          </div>
-          <div class="mt-2">
-            <p class="text-3xl font-black text-slate-800">{{ summary.lke_progress.percentage }}%</p>
-            <p class="text-xs text-slate-400 mt-1">
-              {{ summary.lke_progress.fulfilled }} dari {{ summary.lke_progress.total }} target lengkap
-            </p>
-          </div>
-        </div>
-      </template>
-    </div>
-
-    <!-- Quick Export Bar -->
-    <div class="card p-4 bg-gradient-to-r from-kemenkum-navy to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <p class="text-xs font-bold uppercase tracking-wider text-gold">Ekspor Data & Laporan Resmi</p>
-        <p class="text-xs text-slate-300 mt-0.5">Unduh data rekapitulasi kinerja satker se-Kalimantan Selatan dalam format Excel</p>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-3">
-        <a
-          :href="getDownloadUrl('iku')"
-          target="_blank"
-          class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black tracking-wide inline-flex items-center gap-2 shadow-md border border-emerald-400/40 transition-all hover:scale-[1.02]"
-        >
-          <svg class="w-4 h-4 text-emerald-100 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span>Ekspor Matriks IKU</span>
-        </a>
-
-        <a
-          :href="getDownloadUrl('sakip')"
-          target="_blank"
-          style="background-color: #F5BA31; color: #091F4A;"
-          class="px-4 py-2.5 rounded-xl text-xs font-black tracking-wide inline-flex items-center gap-2 shadow-md border border-amber-300 hover:brightness-105 transition-all hover:scale-[1.02]"
-        >
-          <svg class="w-4 h-4 text-[#091F4A] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span style="color: #091F4A;" class="font-black">Ekspor Komparasi SAKIP</span>
-        </a>
-      </div>
-    </div>
-
-    <!-- Charts Row 1: Radar SAKIP & Donut LKE Status -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Chart 1: SAKIP Radar -->
-      <div class="card p-6 bg-white border border-slate-200 space-y-4">
-        <div>
-          <h2 class="text-sm font-bold text-slate-800">Capaian 4 Komponen SAKIP Se-Kalsel</h2>
-          <p class="text-xs text-slate-400">Rata-rata capaian instansi: Perencanaan, Pengukuran, Pelaporan, Evaluasi</p>
-        </div>
-
-        <div v-if="loading" class="h-64 flex items-center justify-center text-slate-400 text-xs">
-          Memuat visualisasi...
-        </div>
-        <div v-else class="h-64">
-          <apexchart
-            type="radar"
-            height="100%"
-            :options="radarChartOptions"
-            :series="radarChartSeries"
-          />
-        </div>
-      </div>
-
-      <!-- Chart 2: LKE Distribution Donut -->
-      <div class="card p-6 bg-white border border-slate-200 space-y-4">
-        <div>
-          <h2 class="text-sm font-bold text-slate-800">Distribusi Status Data Dukung ZI 2026</h2>
-          <p class="text-xs text-slate-400">Komposisi status verifikasi berkas bukti dukung 6 Area Pengungkit</p>
-        </div>
-
-        <div v-if="loading" class="h-64 flex items-center justify-center text-slate-400 text-xs">
-          Memuat visualisasi...
-        </div>
-        <div v-else class="h-64">
-          <apexchart
-            type="donut"
-            height="100%"
-            :options="donutChartOptions"
-            :series="donutChartSeries"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- Charts Row 2: Renaksi Quarterly Stacked Bar & Top SAKIP Leaderboard -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Chart 3: Renaksi Quarterly -->
-      <div class="card p-6 bg-white border border-slate-200 space-y-4 lg:col-span-2">
-        <div>
-          <h2 class="text-sm font-bold text-slate-800">Progres Rencana Aksi per Triwulan (TW I - IV)</h2>
-          <p class="text-xs text-slate-400">Jumlah kegiatan rencana aksi yang telah selesai vs dalam pelaksanaan</p>
-        </div>
-
-        <div v-if="loading" class="h-64 flex items-center justify-center text-slate-400 text-xs">
-          Memuat visualisasi...
-        </div>
-        <div v-else class="h-64">
-          <apexchart
-            type="bar"
-            height="100%"
-            :options="barChartOptions"
-            :series="barChartSeries"
-          />
-        </div>
-      </div>
-
-      <!-- SAKIP Top Leaderboard -->
-      <div class="card p-6 bg-white border border-slate-200 space-y-4">
-        <div>
-          <h2 class="text-sm font-bold text-slate-800">Peringkat SAKIP Satker</h2>
-          <p class="text-xs text-slate-400">Satuan kerja dengan nilai tertinggi tahun berjalan</p>
-        </div>
-
-        <div v-if="loading" class="space-y-3">
-          <SkeletonCard v-for="n in 5" :key="n" />
-        </div>
-
-        <div v-else-if="!charts?.sakip_ranking.length" class="text-center py-10 text-xs text-slate-400">
-          Belum ada data evaluasi SAKIP.
-        </div>
-
-        <div v-else class="space-y-2.5">
-          <div
-            v-for="(item, idx) in charts.sakip_ranking"
-            :key="idx"
-            class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors"
-          >
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span
-                class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0"
-                :class="{
-                  'bg-gold text-slate-950': idx === 0,
-                  'bg-slate-200 text-slate-700': idx === 1,
-                  'bg-amber-100 text-amber-800': idx === 2,
-                  'bg-slate-100 text-slate-500': idx > 2,
-                }"
+            <div class="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden">
+              <div
+                v-for="item in capaianPkPendingList"
+                :key="item.kode"
+                class="p-3.5 flex items-center justify-between hover:bg-slate-50/70 transition-colors gap-3"
               >
-                {{ idx + 1 }}
-              </span>
-              <span class="text-xs font-bold text-slate-800 truncate" :title="item.satker">
-                {{ item.satker }}
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border flex-shrink-0" :class="item.badgeColor">
+                    {{ item.kode }}
+                  </span>
+                  <span class="text-xs text-slate-700 truncate">
+                    {{ item.name }}: <strong class="text-slate-900">{{ item.uncompletedCount }}</strong> indikator belum diisi untuk September
+                  </span>
+                </div>
+                <RouterLink
+                  to="/capaian-pk"
+                  class="text-xs font-semibold text-blue-600 hover:text-blue-800 whitespace-nowrap transition-colors flex-shrink-0"
+                >
+                  Isi &rarr;
+                </RouterLink>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Laporan Terlambat (Flat divided rows, NO nested cards) -->
+          <div class="space-y-2 pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Laporan Terlambat</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">
+                36
               </span>
             </div>
 
-            <div class="flex items-center gap-2 flex-shrink-0">
-              <span class="text-xs font-black text-slate-900">{{ item.nilai }}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded font-black bg-blue-50 text-blue-700">
-                {{ item.predikat }}
-              </span>
+            <div class="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden">
+              <div
+                v-for="rep in laporanTerlambatList"
+                :key="rep.kode"
+                class="p-3 flex items-center justify-between hover:bg-slate-50/70 transition-colors gap-3"
+              >
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200 flex-shrink-0">
+                    {{ rep.kode }}
+                  </span>
+                  <span class="text-xs text-slate-700 font-medium truncate">
+                    {{ rep.title }}
+                  </span>
+                </div>
+                <span class="text-[11px] text-rose-600 font-mono whitespace-nowrap flex-shrink-0">
+                  tenggat {{ rep.tenggat }}
+                </span>
+              </div>
             </div>
+
+            <div class="pt-1 text-right">
+              <RouterLink
+                to="/laporan"
+                class="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                Lihat seluruh 36 laporan terlambat &rarr;
+              </RouterLink>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: PROGRES RENAKSI PER UNIT (Matched height with left card) -->
+      <div
+        class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 sm:p-6 flex flex-col justify-between lg:h-[420px]"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-[#0B2A6F]">
+              Progres renaksi per unit
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Capaian upload data dukung per triwulan
+            </p>
+          </div>
+          <RouterLink
+            to="/monitoring-daduk"
+            class="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            Buka modul &rarr;
+          </RouterLink>
+        </div>
+
+        <!-- Quarters Filter Pills & Deadline in single balanced row -->
+        <div class="flex items-center justify-between flex-wrap gap-2 pt-1">
+          <div class="flex items-center gap-1.5">
+            <button
+              v-for="tw in (['TW 1', 'TW 2', 'TW 3', 'TW 4'] as const)"
+              :key="tw"
+              type="button"
+              class="px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer border"
+              :class="selectedRenaksiTw === tw
+                ? 'bg-[#1D4ED8] text-white border-[#1D4ED8] shadow-xs'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'"
+              @click="selectedRenaksiTw = tw"
+            >
+              {{ tw }}
+            </button>
+          </div>
+          <span class="text-xs text-slate-500 font-medium">
+            Tenggat {{ selectedRenaksiTw }}: 31/12/2026
+          </span>
+        </div>
+
+        <!-- 6 Units Progress Track Rows (Compact and clean) -->
+        <div class="space-y-3 pt-1">
+          <div
+            v-for="u in renaksiUnitsProgress"
+            :key="u.kode"
+            class="flex items-center gap-3.5"
+          >
+            <span class="w-16 text-xs font-bold text-slate-800 flex-shrink-0">
+              {{ u.kode }}
+            </span>
+            <div class="flex-1 h-2.5 rounded-full bg-slate-100 overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                :class="u.percent > 0 ? 'bg-emerald-500' : 'bg-slate-200'"
+                :style="{ width: u.percent + '%' }"
+              />
+            </div>
+            <span class="w-6 text-right text-xs text-slate-400 font-mono flex-shrink-0">
+              {{ u.label }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Legend (Bottom) -->
+        <div class="flex flex-wrap items-center gap-4 text-xs text-slate-600 pt-3 border-t border-slate-100">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+            <span>Diterima</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500" />
+            <span>Menunggu</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-600" />
+            <span>Perbaikan</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-slate-300" />
+            <span>Belum</span>
           </div>
         </div>
       </div>

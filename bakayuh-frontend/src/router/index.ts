@@ -44,12 +44,32 @@ const router = createRouter({
       component: () => import('@/layouts/AppLayout.vue'),
       children: [
         { path: 'dashboard', name: 'dashboard', component: () => import('@/pages/dashboard/DashboardPage.vue') },
-        // IKU
-        { path: 'iku', name: 'iku.index', component: () => import('@/pages/iku/IkuIndexPage.vue') },
-        { path: 'iku/matriks', name: 'iku.matriks', component: () => import('@/pages/iku/IkuMatriksPage.vue') },
-        // Renaksi
-        { path: 'renaksi', name: 'renaksi.index', component: () => import('@/pages/renaksi/RenaksiIndexPage.vue') },
+
+        // Dedicated Module Tabs per new design
+        { path: 'sasaran-renaksi', name: 'sasaran-renaksi', component: () => import('@/pages/renaksi/SasaranRenaksiPage.vue') },
+        { path: 'monitoring-daduk', name: 'monitoring-daduk', component: () => import('@/pages/renaksi/MonitoringDadukPage.vue') },
+        { path: 'verifikasi', name: 'verifikasi', component: () => import('@/pages/renaksi/VerifikasiDadukPage.vue') },
+        { path: 'capaian-pk', name: 'capaian-pk', component: () => import('@/pages/kinerja/CapaianPkAdminPage.vue') },
+        { path: 'laporan', name: 'laporan', component: () => import('@/pages/kinerja/LaporanAdminPage.vue') },
+        { path: 'pohon-kinerja', name: 'pohon-kinerja', component: () => import('@/pages/kinerja/PohonKinerjaAdminPage.vue') },
+        { path: 'ikpa', name: 'ikpa', component: () => import('@/pages/kinerja/IkpaAdminPage.vue') },
+        {
+          path: 'kelola-akun',
+          name: 'kelola-akun',
+          component: () => import('@/pages/users/PenggunaPage.vue'),
+          meta: { roles: ['super_admin'] },
+        },
+
+        // Backward compatibility redirects & details
+        { path: 'renaksi', redirect: '/sasaran-renaksi' },
         { path: 'renaksi/:id', name: 'renaksi.detail', component: () => import('@/pages/renaksi/RenaksiDetailPage.vue') },
+        { path: 'iku', redirect: '/capaian-pk' },
+        { path: 'iku/matriks', redirect: '/capaian-pk' },
+        { path: 'pengguna', redirect: '/kelola-akun' },
+
+        // Profil
+        { path: 'profil', name: 'profil', component: () => import('@/pages/auth/ProfilPage.vue') },
+
         // SAKIP
         {
           path: 'sakip',
@@ -90,15 +110,6 @@ const router = createRouter({
           component: () => import('@/pages/master/MasterIkuPage.vue'),
           meta: { roles: ['super_admin', 'admin_kanwil'] },
         },
-        // Pengguna
-        {
-          path: 'pengguna',
-          name: 'pengguna.index',
-          component: () => import('@/pages/users/PenggunaPage.vue'),
-          meta: { roles: ['super_admin'] },
-        },
-        // Profil
-        { path: 'profil', name: 'profil', component: () => import('@/pages/auth/ProfilPage.vue') },
       ],
     },
     // Fallback
@@ -112,10 +123,11 @@ router.beforeEach(async (to) => {
   if (to.meta.public) return true
 
   if (!authStore.isAuthenticated) {
-    if (to.path === '/iku') return '/?tab=capaian_pk'
+    if (to.path === '/iku' || to.path === '/capaian-pk') return '/?tab=capaian_pk'
     if (to.path === '/iku/matriks') return '/?tab=matriks'
-    if (to.path === '/renaksi') return '/?tab=renaksi'
-    if (to.path === '/sakip') return '/?tab=ikpa'
+    if (to.path === '/renaksi' || to.path === '/sasaran-renaksi') return '/?tab=renaksi'
+    if (to.path === '/sakip' || to.path === '/ikpa') return '/?tab=ikpa'
+    if (to.path === '/laporan') return '/?tab=laporan'
     return '/login'
   }
 

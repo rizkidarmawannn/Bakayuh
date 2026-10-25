@@ -11,6 +11,7 @@ const navItems = [
   { name: 'pohon', label: 'Pohon Kinerja', to: { path: '/', query: { tab: 'pohon' } } },
   { name: 'renaksi', label: 'Renaksi', to: { path: '/', query: { tab: 'renaksi' } } },
   { name: 'capaian_pk', label: 'Capaian PK', to: { path: '/', query: { tab: 'capaian_pk' } } },
+  { name: 'laporan', label: 'Laporan', to: { path: '/', query: { tab: 'laporan' } } },
   { name: 'ikpa', label: 'IKPA', to: { path: '/', query: { tab: 'ikpa' } } },
 ]
 
@@ -27,6 +28,9 @@ function isNavActive(itemName: string): boolean {
   }
   if (itemName === 'capaian_pk') {
     return currentTab === 'capaian_pk' || currentTab === 'iku' || currentTab === 'matriks'
+  }
+  if (itemName === 'laporan') {
+    return currentTab === 'laporan'
   }
   if (itemName === 'ikpa') {
     return currentTab === 'ikpa' || currentTab === 'sakip'
