@@ -47,12 +47,57 @@ const router = createRouter({
 
         // Dedicated Module Tabs per new design
         { path: 'sasaran-renaksi', name: 'sasaran-renaksi', component: () => import('@/pages/renaksi/SasaranRenaksiPage.vue') },
-        { path: 'monitoring-daduk', name: 'monitoring-daduk', component: () => import('@/pages/renaksi/MonitoringDadukPage.vue') },
-        { path: 'verifikasi', name: 'verifikasi', component: () => import('@/pages/renaksi/VerifikasiDadukPage.vue') },
+        {
+          path: 'monitoring-daduk',
+          name: 'monitoring-daduk',
+          component: () => import('@/pages/renaksi/MonitoringDadukPage.vue'),
+          meta: { roles: ['super_admin', 'admin_kanwil'] },
+        },
+        {
+          path: 'verifikasi',
+          name: 'verifikasi',
+          component: () => import('@/pages/renaksi/VerifikasiDadukPage.vue'),
+          meta: { roles: ['super_admin', 'admin_kanwil'] },
+        },
         { path: 'capaian-pk', name: 'capaian-pk', component: () => import('@/pages/kinerja/CapaianPkAdminPage.vue') },
         { path: 'laporan', name: 'laporan', component: () => import('@/pages/kinerja/LaporanAdminPage.vue') },
-        { path: 'pohon-kinerja', name: 'pohon-kinerja', component: () => import('@/pages/kinerja/PohonKinerjaAdminPage.vue') },
-        { path: 'ikpa', name: 'ikpa', component: () => import('@/pages/kinerja/IkpaAdminPage.vue') },
+        { path: 'laporan/matriks', redirect: '/laporan' },
+        {
+          path: 'laporan/verifikasi',
+          name: 'laporan.verifikasi',
+          component: () => import('@/pages/kinerja/VerifikasiLaporanPage.vue'),
+          meta: { roles: ['super_admin', 'admin_kanwil'] },
+        },
+        {
+          path: 'laporan/jenis',
+          name: 'laporan.jenis',
+          component: () => import('@/pages/kinerja/JenisLaporanPage.vue'),
+          meta: { roles: ['super_admin', 'admin_kanwil'] },
+        },
+        {
+          path: 'pohon-kinerja',
+          name: 'pohon-kinerja',
+          component: () => import('@/pages/kinerja/PohonKinerjaAdminPage.vue'),
+          meta: { fullWidth: true, roles: ['super_admin', 'admin_kanwil'] },
+        },
+        {
+          path: 'pohon-kinerja/kelola',
+          name: 'pohon-kinerja-kelola',
+          component: () => import('@/pages/kinerja/PohonKinerjaAdminPage.vue'),
+          meta: { fullWidth: true, roles: ['super_admin', 'admin_kanwil'] },
+        },
+        {
+          path: 'ikpa',
+          name: 'ikpa',
+          component: () => import('@/pages/kinerja/IkpaAdminPage.vue'),
+          meta: { roles: ['super_admin', 'admin_kanwil'] },
+        },
+        {
+          path: 'sakip',
+          name: 'sakip',
+          component: () => import('@/pages/kinerja/SakipAdminPage.vue'),
+          meta: { roles: ['super_admin', 'admin_kanwil'] },
+        },
         {
           path: 'kelola-akun',
           name: 'kelola-akun',
@@ -70,13 +115,7 @@ const router = createRouter({
         // Profil
         { path: 'profil', name: 'profil', component: () => import('@/pages/auth/ProfilPage.vue') },
 
-        // SAKIP
-        {
-          path: 'sakip',
-          name: 'sakip.index',
-          component: () => import('@/pages/sakip/SakipIndexPage.vue'),
-          meta: { roles: ['super_admin', 'admin_kanwil'] },
-        },
+        // SAKIP Detail (if needed)
         {
           path: 'sakip/:satkerId',
           name: 'sakip.detail',
@@ -126,7 +165,7 @@ router.beforeEach(async (to) => {
     if (to.path === '/iku' || to.path === '/capaian-pk') return '/?tab=capaian_pk'
     if (to.path === '/iku/matriks') return '/?tab=matriks'
     if (to.path === '/renaksi' || to.path === '/sasaran-renaksi') return '/?tab=renaksi'
-    if (to.path === '/sakip' || to.path === '/ikpa') return '/?tab=ikpa'
+    if (to.path === '/ikpa') return '/?tab=ikpa'
     if (to.path === '/laporan') return '/?tab=laporan'
     return '/login'
   }
@@ -138,6 +177,14 @@ router.beforeEach(async (to) => {
   const requiredRoles = to.meta.roles as string[] | undefined
   if (requiredRoles && authStore.user) {
     if (!requiredRoles.includes(authStore.user.role)) {
+      if (authStore.user.role === 'operator_satker') {
+        if (to.path.startsWith('/renaksi') || to.path === '/monitoring-daduk' || to.path === '/verifikasi') {
+          return '/sasaran-renaksi'
+        }
+        if (to.path.startsWith('/laporan/')) {
+          return '/laporan'
+        }
+      }
       return '/dashboard'
     }
   }

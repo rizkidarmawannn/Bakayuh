@@ -7,41 +7,45 @@
 
 ## Tentang Proyek
 
-BAKAYUH adalah platform aplikasi web terpadu satu pintu yang dikembangkan untuk mengintegrasikan dua pilar tata kelola strategis di lingkungan Kantor Wilayah Kementerian Hukum Kalimantan Selatan beserta Satuan Kerja (Satker / UPT) binaannya:
+**BAKAYUH** adalah platform aplikasi web terpadu satu pintu yang dikembangkan untuk mengintegrasikan dua pilar tata kelola strategis di lingkungan Kantor Wilayah Kementerian Hukum Kalimantan Selatan beserta Satuan Kerja (Satker / UPT) binaannya:
 
-1. **Akuntabilitas Kinerja Organisasi (E-Performance / SAKIP):** Pemantauan Indikator Kinerja Utama (IKU), pelaporan target dan realisasi Rencana Aksi Perjanjian Kinerja (Renaksi PK), penilaian berkala Sistem Akuntabilitas Kinerja Instansi Pemerintah (SAKIP), monitoring Capaian Perjanjian Kinerja (PK), Pohon Kinerja hierarkis, serta pemantauan Indikator Kinerja Pelaksanaan Anggaran (IKPA).
-2. **Pembangunan Reformasi Birokrasi & Zona Integritas (E-RB / ZI):** Pelaksanaan Rencana Kerja Tahunan Reformasi Birokrasi (RKT RB General, Tematik, dan Meso target B03/B06/B09/B12) serta pemenuhan Lembar Kerja Evaluasi (LKE) Zona Integritas menuju Wilayah Bebas dari Korupsi (WBK) dan Wilayah Birokrasi Bersih dan Melayani (WBBM).
+1. **Akuntabilitas Kinerja Organisasi (E-Performance / SAKIP):** Pemantauan Indikator Kinerja Utama (IKU), pelaporan target dan realisasi Rencana Aksi Perjanjian Kinerja (Renaksi PK), monitoring bukti dukung (Monitoring Daduk), penilaian berkala Sistem Akuntabilitas Kinerja Instansi Pemerintah (SAKIP), pelaporan matriks Capaian Perjanjian Kinerja (PK), visualisasi hierarki Pohon Kinerja cascading, serta pemantauan Indikator Kinerja Pelaksanaan Anggaran (IKPA).
+2. **Pembangunan Reformasi Birokrasi & Zona Integritas (E-RB / ZI):** Pelaksanaan Rencana Kerja Tahunan Reformasi Birokrasi (RKT RB General, Tematik, dan Meso periode B03/B06/B09/B12) serta pemenuhan Lembar Kerja Evaluasi (LKE) Zona Integritas menuju Wilayah Bebas dari Korupsi (WBK) dan Wilayah Birokrasi Bersih dan Melayani (WBBM).
 
 ---
 
-## Modul & Fitur Utama (v1.0.0)
+## Modul & Fitur Utama
 
-- **Dashboard Admin Eksekutif:**
-  - Ringkasan KPI dan matriks capaian kinerja organisasi secara realtime.
-  - Kartu Perlu Tindakan dengan kontainer scrollable yang memuat antrean verifikasi, deteksi keterlambatan pelaporan, dan capaian indikator bulanan.
-  - Kartu Progres Renaksi per Unit dengan pelacakan pemenuhan data dukung per triwulan (TW I s.d. TW IV) yang selaras secara simetris.
-  - Tombol pintas navigasi cepat ke seluruh modul operasional.
+### 1. Dashboard Eksekutif
+- **Metrik Kinerja Real-time:** Menampilkan ringkasan KPI, total dokumen, status verifikasi, dan progres capaian tahun berjalan secara langsung.
+- **Kartu Perlu Tindakan:** Antarmuka dengan kontainer scrollable yang mengelompokkan antrean verifikasi bukti dukung, deteksi keterlambatan pelaporan, dan evaluasi capaian indikator bulanan.
+- **Progres Renaksi per Unit:** Pemantauan kelengkapan pemenuhan data dukung per triwulan (TW I s.d. TW IV) secara simetris untuk setiap unit kerja eselon.
+- **Kelengkapan Capaian PK:** Matriks visual status pengisian capaian 12 bulan (Januari s.d. Desember) untuk seluruh unit eselon (Setjen, AHU, KI, PP, BPHN, BSK) dilengkapi persentase kelengkapan pelaporan.
+- **IKPA Terkini (Speedometer & Target):** Gauge speedometer interaktif nilai IKPA dengan kategori predikat kinerja anggaran, progress bar per unit satker, dan grafik sebaran nilai terhadap batas target nasional (95,00).
 
-- **Pilar E-Performance (Kinerja):**
-  - **Sasaran & Rencana Aksi (Renaksi PK):** Penyusunan target triwulanan dan evaluasi rencana aksi per unit kerja.
-  - **Monitoring Data Dukung:** Pemantauan status unggahan dan rekapitulasi data dukung renaksi.
-  - **Verifikasi Data Dukung:** Antarmuka verifikasi berfilter tunggal dengan telaah berkas PDF bukti dukung, catatan klarifikasi dua arah, dan persetujuan bertingkat.
-  - **Capaian PK (Perjanjian Kinerja):** Pelaporan dan pemantauan realisasi indikator kinerja bulanan per unit kerja.
-  - **Modul Laporan:** Pengelolaan dan rekapitulasi pelaporan berkala unit kerja (bulanan, triwulanan, tahunan).
-  - **Pohon Kinerja:** Visualisasi hierarki cascading kinerja dari Sasaran Strategis (SS), Indikator Sasaran Strategis (IKSS), Sasaran Program (SP), Indikator Sasaran Program (ISP), hingga Sasaran Kegiatan (SK) dan Indikator Kinerja Kegiatan (IKK) seluruh Ditjen/Badan dan Kanwil.
-  - **IKPA (Indikator Kinerja Pelaksanaan Anggaran):** Monitoring nilai kinerja pelaksanaan anggaran dengan multi-tier satker (Kanwil, Ditjen AHU, Ditjen KI, Ditjen PP, BPHN, BSK), dialog input realisasi anggaran per triwulan, konfigurasi target, dan ekspor data ke format CSV.
+### 2. Pilar E-Performance (Kinerja)
+- **Sasaran & Rencana Aksi (Renaksi PK):** Penyusunan target triwulanan dan evaluasi rencana aksi per unit kerja, dilengkapi fitur ekspor rekapitulasi data renaksi ke berkas CSV (UTF-8 BOM).
+- **Monitoring Data Dukung (Daduk):** Pemantauan status unggahan berkas bukti dukung renaksi dengan filter kartu metrik interaktif (*Semua*, *Terverifikasi*, *Menunggu Verifikasi*, *Ditolak*), pop-up modal *Atur Tenggat Pengumpulan*, dan fitur ekspor rekap data dukung CSV.
+- **Verifikasi Data Dukung:** Antarmuka verifikasi terpadu dengan penelaahan berkas PDF bukti dukung, riwayat klarifikasi dua arah, dan persetujuan bertingkat.
+- **Capaian PK (Perjanjian Kinerja):** Matriks multi-kolom terang berstandar Kemenkumham yang memuat Sasaran Kinerja, Indikator Kinerja Kegiatan, Target, capaian bulanan (Jan–Des), Rekap Triwulan (TW I–TW IV otomatis dengan opsi timpa manual), Capaian Kumulatif (*s.d. Semester I*, *s.d. TW III*, *s.d. TW IV*), kolom Keterangan triwulanan, modal input/edit nilai sel, modal konfigurasi indikator, dan ekspor CSV.
+- **Modul Laporan (3 Sub-Item):**
+  - *Matriks Laporan:* Matriks pemantauan status dan kepatuhan penyampaian laporan berkala unit kerja per triwulan.
+  - *Verifikasi Laporan:* Antarmuka penelaahan dokumen laporan berkala, telaah berkas, dan histori catatan perbaikan.
+  - *Jenis Laporan:* Pengelolaan master katalog jenis dokumen pelaporan (LHKPN, SPIP, SAKIP, Renaksi, dll.) beserta konfigurasi periode dan frekuensi penyampaian.
+- **Pohon Kinerja Hierarkis:** Visualisasi cascading hierarki kinerja yang responsif (bebas horizontal overflow / tata letak fleksibel) memetakan alur Sasaran Strategis (SS), Sasaran Program (SP), hingga Sasaran Kegiatan (SK) dan IKK seluruh unit/badan binaan.
+- **IKPA (Indikator Kinerja Pelaksanaan Anggaran):** Pemantauan nilai kinerja pelaksanaan anggaran dengan pembagian multi-satker (Kanwil, Ditjen AHU, Ditjen KI, Ditjen PP, BPHN, BSK), dialog input realisasi anggaran per triwulan, konfigurasi target anggaran, dan ekspor data ke format CSV.
+- **Evaluasi SAKIP:** Rekapitulasi penilaian 4 komponen SAKIP (Perencanaan, Pengukuran, Pelaporan, Evaluasi Internal) dengan tabel nilai Mandiri, Pembina, Itjen, dan Panel; ringkasan kriteria bobot nilai; serta indikator visual ringkas *Nilai Akhir SAKIP* horizontal.
 
-- **Pilar E-RB (Reformasi Birokrasi) & SAKIP:**
-  - **LKE ZI (WBK / WBBM):** Instrumen evaluasi 6 Area Perubahan Komponen Pengungkit (Pemenuhan & Reform) serta Komponen Hasil.
-  - **RKT RB Periode B03, B06, B09, B12:** Pelaporan aksi RB General, Tematik, dan Meso dengan batas waktu unggah.
-  - **Evaluasi SAKIP:** Rekapitulasi penilaian 4 komponen SAKIP (Perencanaan, Pengukuran, Pelaporan, Evaluasi Internal) beserta rekomendasi perbaikan.
+### 3. Pilar E-RB (Reformasi Birokrasi) & ZI
+- **LKE ZI (WBK / WBBM):** Instrumen penilaian mandiri 6 Area Perubahan Komponen Pengungkit (Manajemen Perubahan, Penataan Tatalaksana, Penataan Sistem Manajemen SDM, Penguatan Akuntabilitas, Penguatan Pengawasan, Peningkatan Kualitas Pelayanan Publik) serta Komponen Hasil.
+- **RKT RB (B03, B06, B09, B12):** Pelaporan rencana aksi reformasi birokrasi kategori General, Tematik, dan Meso sesuai timeline periode pelaporan Kementerian.
 
-- **Portal Publik (Akses Tanpa Login):**
-  - Halaman transparansi publik yang menyajikan capaian indikator kinerja, rekapitulasi dokumen SAKIP, progres reformasi birokrasi, dan rekapitulasi renaksi secara interaktif.
+### 4. Portal Publik (Akses Tanpa Login)
+- Halaman transparansi publik yang menyajikan capaian indikator kinerja, rekapitulasi dokumen SAKIP, progres reformasi birokrasi, dan rekapitulasi rencana aksi secara interaktif tanpa memerlukan autentikasi.
 
-- **Manajemen Akun & Master Data:**
-  - Pengelolaan data pengguna berdasarkan hak akses bertingkat (Super Admin, Admin Kanwil, Operator Satker, Pimpinan/Viewer).
-  - Manajemen master data Satker, Tahun Anggaran, dan IKU.
+### 5. Manajemen Akun & Hak Akses
+- Pengelolaan pengguna berbasis hak akses bertingkat (Super Admin, Admin Kanwil, Operator Satker, Pimpinan/Viewer).
+- Pengelolaan master data Satker, Tahun Anggaran, dan Indikator Kinerja.
 
 ---
 
@@ -84,9 +88,9 @@ Bakayuh/
 │
 ├── bakayuh-frontend/          # Aplikasi Klien Vue 3 + TypeScript
 │   ├── src/
-│   │   ├── components/        # Komponen antarmuka (Navbar, Sidebar, Modal, dll.)
-│   │   ├── composables/       # Vue composables (useAuth, useApi, usePagination)
-│   │   ├── pages/             # Halaman modul (Dashboard, Kinerja, Renaksi, Publik, dll.)
+│   │   ├── components/        # Komponen antarmuka (Navbar, AppSidebar, Modal, dll.)
+│   │   ├── composables/       # Vue composables (useAuth, useApi, usePagination, useToast)
+│   │   ├── pages/             # Halaman modul (Dashboard, Kinerja, Renaksi, Laporan, Publik, dll.)
 │   │   ├── router/            # Definisi route & route guards
 │   │   ├── stores/            # Pinia stores
 │   │   └── types/             # TypeScript interface & type definitions
@@ -101,8 +105,6 @@ Bakayuh/
 ---
 
 ## Panduan Instalasi & Menjalankan Aplikasi
-
-Ikuti langkah-langkah berikut untuk menjalankan program di komputer lokal baru:
 
 ### 1. Prasyarat Sistem
 Pastikan perangkat Anda telah terpasang:
@@ -206,8 +208,8 @@ Pastikan perangkat Anda telah terpasang:
 
 ### 4. Manajemen Akun Pengguna
 
-- Akun pengguna dan hak akses diatur melalui seeder database pada direktori `database/seeders/UserSeeder.php` atau didaftarkan langsung oleh administrator melalui menu **Kelola Akun** di dalam aplikasi.
-- Untuk alasan keamanan dan kepatuhan privasi, detail kredensial akun tidak dipublikasikan pada repositori ini.
+- Akun pengguna dan hak akses diatur melalui seeder database pada direktori `database/seeders/UserSeeder.php` atau didaftarkan langsung oleh administrator berwenang melalui menu **Kelola Akun** di dalam sistem.
+- Untuk menjaga keamanan dan kepatuhan privasi instansi, detail kredensial akun pengguna tidak dicantumkan di dalam dokumentasi repositori publik ini.
 - Pengguna umum dapat langsung mengakses **Portal Publik** tanpa memerlukan proses login melalui tombol *Portal Publik* pada halaman utama atau navigasi publik.
 
 ---
