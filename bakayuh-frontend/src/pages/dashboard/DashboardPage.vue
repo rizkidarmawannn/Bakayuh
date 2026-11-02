@@ -375,15 +375,15 @@ const quickModules = [
 // Renaksi Triwulan state for right panel
 const selectedRenaksiTw = ref<'TW 1' | 'TW 2' | 'TW 3' | 'TW 4'>('TW 4')
 
-// Unit Renaksi Progress data (Right column)
-const renaksiUnitsProgress = ref([
-  { kode: 'Setjen', name: 'Bagian Tata Usaha dan Umum', percent: 0, label: '-' },
-  { kode: 'AHU', name: 'Administrasi Hukum Umum', percent: 0, label: '-' },
-  { kode: 'KI', name: 'Kekayaan Intelektual', percent: 0, label: '-' },
-  { kode: 'PP', name: 'Peraturan Perundang-Undangan', percent: 0, label: '-' },
-  { kode: 'BPHN', name: 'Badan Pembinaan Hukum Nasional', percent: 0, label: '-' },
-  { kode: 'BSK', name: 'Badan Strategi Kebijakan', percent: 0, label: '-' },
-])
+// Unit Renaksi Progress data (Right column - dynamically derived from monitoring rows)
+const renaksiUnitsProgress = computed(() => {
+  return dadukStore.monitoringRows.value.map((r) => ({
+    kode: r.unit,
+    name: r.unitName,
+    percent: r.progres,
+    label: r.progres > 0 ? `${r.progres}%` : '-',
+  }))
+})
 
 // Capaian PK Action items (Left column)
 const capaianPkPendingList = ref([
@@ -1031,7 +1031,7 @@ onMounted(() => {
           to="/verifikasi"
           class="bg-white rounded-2xl p-5 border-l-4 border-l-amber-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
-          <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">{{ dadukStore.countMenunggu.value }}</span>
+          <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">{{ dadukStore.totalDadukMenunggu }}</span>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">Menunggu verifikasi</span>
             <span class="text-[11px] text-amber-600 font-medium inline-flex items-center gap-1 mt-0.5 group-hover:underline">
@@ -1057,7 +1057,7 @@ onMounted(() => {
           to="/laporan"
           class="bg-white rounded-2xl p-5 border-l-4 border-l-amber-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
-          <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">{{ dadukStore.countMenunggu.value }}</span>
+          <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">{{ dadukStore.laporanMenungguCount }}</span>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">Laporan menunggu verifikasi</span>
             <span class="text-[11px] text-slate-400 font-normal block mt-0.5">klik untuk memeriksa &rarr;</span>
@@ -1070,18 +1070,20 @@ onMounted(() => {
           class="bg-white rounded-2xl p-5 border-l-4 border-l-emerald-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
           <div class="flex items-center justify-between">
-            <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">0%</span>
+            <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">{{ dadukStore.persenDadukDiterima }}%</span>
             <!-- Mini Donut SVG -->
             <div class="w-10 h-10 flex-shrink-0">
               <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                 <path class="text-slate-100" stroke-width="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path class="text-emerald-500" stroke-width="4" stroke-dasharray="0, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="text-emerald-500" stroke-width="4" :stroke-dasharray="`${dadukStore.persenDadukDiterima}, 100`" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
               </svg>
             </div>
           </div>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">Renaksi diterima TW 4</span>
-            <span class="text-[11px] text-slate-400 font-normal block mt-0.5">0 dari 0 selesai</span>
+            <span class="text-[11px] text-slate-400 font-normal block mt-0.5">
+              {{ dadukStore.totalDadukDiterima }} dari {{ dadukStore.totalDadukRenaksi }} selesai
+            </span>
           </div>
         </RouterLink>
 

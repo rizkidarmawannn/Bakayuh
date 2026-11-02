@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useDadukLaporanStore } from '@/composables/useDadukLaporanStore'
 
 const router = useRouter()
+const dadukStore = useDadukLaporanStore()
 
 // Filter Triwulan
 const dadukFilterTw = ref('Semua triwulan')
@@ -18,35 +20,16 @@ const twOptions = [
 export type MetricFilterType = 'all' | 'diterima' | 'menunggu' | 'perbaikan' | 'belum'
 const activeMetricFilter = ref<MetricFilterType>('all')
 
-// Tabel Data Dukung Per Unit
-interface DadukRow {
-  unit: string
-  total: number
-  belum: number
-  menunggu: number
-  perbaikan: number
-  diterima: number
-  progres: number
-}
-
-const dadukTableRows = ref<DadukRow[]>([
-  { unit: 'Setjen', total: 4, belum: 1, menunggu: 1, perbaikan: 1, diterima: 1, progres: 25 },
-  { unit: 'AHU', total: 3, belum: 1, menunggu: 1, perbaikan: 0, diterima: 1, progres: 33 },
-  { unit: 'KI', total: 2, belum: 0, menunggu: 1, perbaikan: 1, diterima: 0, progres: 0 },
-  { unit: 'PP', total: 2, belum: 1, menunggu: 0, perbaikan: 0, diterima: 1, progres: 50 },
-  { unit: 'BPHN', total: 3, belum: 2, menunggu: 1, perbaikan: 0, diterima: 0, progres: 0 },
-  { unit: 'BSK', total: 2, belum: 1, menunggu: 0, perbaikan: 1, diterima: 0, progres: 0 },
-])
+// Tabel Data Dukung Per Unit (Terkoneksi ke store reactive & localStorage)
+const dadukTableRows = dadukStore.monitoringRows
 
 // Kalkulasi Dinamis Metrik
-const totalRenaksi = computed(() => dadukTableRows.value.reduce((acc, r) => acc + r.total, 0))
-const totalBelum = computed(() => dadukTableRows.value.reduce((acc, r) => acc + r.belum, 0))
-const totalMenunggu = computed(() => dadukTableRows.value.reduce((acc, r) => acc + r.menunggu, 0))
-const totalPerbaikan = computed(() => dadukTableRows.value.reduce((acc, r) => acc + r.perbaikan, 0))
-const totalDiterima = computed(() => dadukTableRows.value.reduce((acc, r) => acc + r.diterima, 0))
-const persenDiterima = computed(() =>
-  totalRenaksi.value > 0 ? Math.round((totalDiterima.value / totalRenaksi.value) * 100) : 0,
-)
+const totalRenaksi = dadukStore.totalDadukRenaksi
+const totalBelum = dadukStore.totalDadukBelum
+const totalMenunggu = dadukStore.totalDadukMenunggu
+const totalPerbaikan = dadukStore.totalDadukPerbaikan
+const totalDiterima = dadukStore.totalDadukDiterima
+const persenDiterima = dadukStore.persenDadukDiterima
 
 // Filter Baris Tabel berdasarkan Metric Filter
 const filteredRows = computed(() => {
