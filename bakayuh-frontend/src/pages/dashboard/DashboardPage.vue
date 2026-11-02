@@ -3,9 +3,29 @@ import { ref, onMounted, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { apiClient } from '@/composables/useApi'
 import { useAuth } from '@/composables/useAuth'
+import { useDadukLaporanStore } from '@/composables/useDadukLaporanStore'
 import type { DashboardSummary, TahunAnggaran } from '@/types'
 
 const { user, isSuperAdmin, isAdminKanwil, isOperatorSatker, userUnitCode } = useAuth()
+const dadukStore = useDadukLaporanStore()
+
+const operatorMenungguCount = computed(() => {
+  const code = (userUnitCode.value || 'AHU').toUpperCase()
+  return dadukStore.submissions.value.filter(
+    (s) => s.unitKode.toUpperCase() === code && s.status === 'Menunggu',
+  ).length
+})
+
+const operatorPerbaikanCount = computed(() => {
+  const code = (userUnitCode.value || 'AHU').toUpperCase()
+  return dadukStore.submissions.value.filter(
+    (s) => s.unitKode.toUpperCase() === code && s.status === 'Perlu Perbaikan',
+  ).length
+})
+
+const adminPendingSubmissions = computed(() =>
+  dadukStore.submissions.value.filter((s) => s.status === 'Menunggu'),
+)
 
 const loading = ref(true)
 const summary = ref<DashboardSummary | null>(null)
@@ -489,22 +509,24 @@ onMounted(() => {
 
         <!-- Card 2: Perlu diperbaiki -->
         <RouterLink
-          to="/sasaran-renaksi"
+          to="/laporan"
           class="bg-white rounded-2xl p-5 border-l-4 border-l-rose-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
-          <span class="text-3xl sm:text-4xl font-black text-rose-600">0</span>
+          <span class="text-3xl sm:text-4xl font-black text-rose-600">{{ operatorPerbaikanCount }}</span>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">Perlu diperbaiki</span>
-            <span class="text-[11px] text-slate-400 font-normal block mt-0.5">semua aman</span>
+            <span class="text-[11px] text-slate-400 font-normal block mt-0.5">
+              {{ operatorPerbaikanCount > 0 ? `${operatorPerbaikanCount} perlu revisi` : 'semua aman' }}
+            </span>
           </div>
         </RouterLink>
 
         <!-- Card 3: Menunggu verifikasi -->
         <RouterLink
-          to="/sasaran-renaksi"
+          to="/laporan"
           class="bg-white rounded-2xl p-5 border-l-4 border-l-amber-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
-          <span class="text-3xl sm:text-4xl font-black text-amber-500">0</span>
+          <span class="text-3xl sm:text-4xl font-black text-amber-500">{{ operatorMenungguCount }}</span>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">Menunggu verifikasi</span>
             <span class="text-[11px] text-slate-400 font-normal block mt-0.5">daduk &amp; laporan</span>
@@ -809,7 +831,7 @@ onMounted(() => {
           to="/verifikasi"
           class="bg-white rounded-2xl p-5 border-l-4 border-l-amber-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
-          <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">0</span>
+          <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">{{ dadukStore.countMenunggu.value }}</span>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">Menunggu verifikasi</span>
             <span class="text-[11px] text-amber-600 font-medium inline-flex items-center gap-1 mt-0.5 group-hover:underline">
@@ -835,10 +857,10 @@ onMounted(() => {
           to="/laporan"
           class="bg-white rounded-2xl p-5 border-l-4 border-l-amber-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
-          <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">0</span>
+          <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">{{ dadukStore.countMenunggu.value }}</span>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">Laporan menunggu verifikasi</span>
-            <span class="text-[11px] text-slate-400 font-normal block mt-0.5">36 laporan terlambat</span>
+            <span class="text-[11px] text-slate-400 font-normal block mt-0.5">klik untuk memeriksa &rarr;</span>
           </div>
         </RouterLink>
 
@@ -898,10 +920,43 @@ onMounted(() => {
           <div class="flex-1 overflow-y-auto pr-1.5 pt-3 space-y-4 scrollbar-thin">
             <!-- Section 1: Alert Bars (Menunggu & Lewat Tenggat) -->
             <div class="space-y-2.5">
-              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Menunggu Verifikasi
+              <div class="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <span>Menunggu Verifikasi</span>
+                <span v-if="adminPendingSubmissions.length > 0" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">
+                  {{ adminPendingSubmissions.length }} berkas
+                </span>
               </div>
-              <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex items-center gap-2.5 text-xs text-emerald-800 font-semibold">
+
+              <!-- List of pending items if any -->
+              <div
+                v-if="adminPendingSubmissions.length > 0"
+                class="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden bg-white"
+              >
+                <div
+                  v-for="sub in adminPendingSubmissions.slice(0, 3)"
+                  :key="sub.id"
+                  class="p-2.5 sm:p-3 flex items-center justify-between hover:bg-slate-50/70 transition-colors gap-3"
+                >
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="font-bold text-xs text-slate-800">{{ sub.unitKode }}</span>
+                      <span class="text-[10px] text-slate-400 font-medium">&bull; {{ sub.periode }}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 truncate max-w-[190px]">{{ sub.namaFile }}</p>
+                  </div>
+                  <RouterLink
+                    to="/verifikasi"
+                    class="px-2.5 py-1 rounded-lg bg-[#0B2A6F] text-white text-[11px] font-bold hover:bg-[#1D4ED8] transition-colors flex-shrink-0"
+                  >
+                    Periksa
+                  </RouterLink>
+                </div>
+              </div>
+
+              <div
+                v-else
+                class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex items-center gap-2.5 text-xs text-emerald-800 font-semibold"
+              >
                 <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>

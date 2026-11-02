@@ -1,93 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import {
+  useDadukLaporanStore,
+  type DadukSubmission,
+} from '@/composables/useDadukLaporanStore'
 
-export interface SubmissionItem {
-  id: string
-  unitKode: string
-  unitName: string
-  jenisLaporan: string
-  periode: string
-  tanggalKirim: string
-  namaFile: string
-  ukuranFile: string
-  status: 'Menunggu' | 'Perlu Perbaikan' | 'Diterima'
-  catatanVerifikator?: string
-}
-
-const submissions = ref<SubmissionItem[]>([
-  {
-    id: 'sub-1',
-    unitKode: 'Setjen',
-    unitName: 'Bagian Tata Usaha dan Umum',
-    jenisLaporan: 'Laporan Bulanan',
-    periode: 'September 2026',
-    tanggalKirim: '09/10/2026 14:20',
-    namaFile: 'Laporan_Bulanan_Setjen_Sep2026.pdf',
-    ukuranFile: '2.4 MB',
-    status: 'Menunggu',
-    catatanVerifikator: '',
-  },
-  {
-    id: 'sub-2',
-    unitKode: 'AHU',
-    unitName: 'Administrasi Hukum Umum',
-    jenisLaporan: 'Laporan Triwulan',
-    periode: 'Triwulan III (TW 3)',
-    tanggalKirim: '08/10/2026 11:05',
-    namaFile: 'Laporan_TW3_AHU_2026_Final.pdf',
-    ukuranFile: '4.1 MB',
-    status: 'Menunggu',
-    catatanVerifikator: '',
-  },
-  {
-    id: 'sub-3',
-    unitKode: 'KI',
-    unitName: 'Kekayaan Intelektual',
-    jenisLaporan: 'Laporan Bulanan',
-    periode: 'Agustus 2026',
-    tanggalKirim: '09/09/2026 16:45',
-    namaFile: 'Laporan_Bulanan_KI_Agustus2026.pdf',
-    ukuranFile: '1.8 MB',
-    status: 'Diterima',
-    catatanVerifikator: 'Data dukung dan laporan lengkap sesuai format standar.',
-  },
-  {
-    id: 'sub-4',
-    unitKode: 'PP',
-    unitName: 'Peraturan Perundang-Undangan',
-    jenisLaporan: 'Laporan Triwulan',
-    periode: 'Triwulan II (TW 2)',
-    tanggalKirim: '09/07/2026 10:15',
-    namaFile: 'Laporan_TW2_PP_Revisi.pdf',
-    ukuranFile: '3.2 MB',
-    status: 'Diterima',
-    catatanVerifikator: 'Revisi matriks capaian telah diperbaiki dan diverifikasi.',
-  },
-  {
-    id: 'sub-5',
-    unitKode: 'BPHN',
-    unitName: 'Badan Pembinaan Hukum Nasional',
-    jenisLaporan: 'Laporan Bulanan',
-    periode: 'September 2026',
-    tanggalKirim: '10/10/2026 09:30',
-    namaFile: 'Laporan_BPHN_Sep_Draft.pdf',
-    ukuranFile: '1.2 MB',
-    status: 'Perlu Perbaikan',
-    catatanVerifikator: 'Tanda tangan pimpinan belum terlampir, mohon perbaiki.',
-  },
-  {
-    id: 'sub-6',
-    unitKode: 'BSK',
-    unitName: 'Badan Strategi Kebijakan',
-    jenisLaporan: 'Laporan Bulanan',
-    periode: 'September 2026',
-    tanggalKirim: '09/10/2026 15:10',
-    namaFile: 'Laporan_Kinerja_BSK_Sep2026.pdf',
-    ukuranFile: '2.9 MB',
-    status: 'Menunggu',
-    catatanVerifikator: '',
-  },
-])
+const dadukStore = useDadukLaporanStore()
+const submissions = dadukStore.submissions
 
 // Filters
 const filterUnit = ref('Semua unit')
@@ -109,17 +28,17 @@ const filteredSubmissions = computed(() => {
 })
 
 // Metrics
-const countMenunggu = computed(() => submissions.value.filter((s) => s.status === 'Menunggu').length)
-const countPerluPerbaikan = computed(() => submissions.value.filter((s) => s.status === 'Perlu Perbaikan').length)
-const countDiterima = computed(() => submissions.value.filter((s) => s.status === 'Diterima').length)
+const countMenunggu = dadukStore.countMenunggu
+const countPerluPerbaikan = dadukStore.countPerluPerbaikan
+const countDiterima = dadukStore.countDiterima
 
 // Verification Modal
 const showModal = ref(false)
-const activeItem = ref<SubmissionItem | null>(null)
+const activeItem = ref<DadukSubmission | null>(null)
 const decisionStatus = ref<'Diterima' | 'Perlu Perbaikan'>('Diterima')
 const decisionCatatan = ref('')
 
-function openVerifyModal(item: SubmissionItem) {
+function openVerifyModal(item: DadukSubmission) {
   activeItem.value = item
   decisionStatus.value = item.status === 'Perlu Perbaikan' ? 'Perlu Perbaikan' : 'Diterima'
   decisionCatatan.value = item.catatanVerifikator || ''
@@ -144,10 +63,31 @@ function triggerToast(msg: string) {
 
 function saveVerification() {
   if (!activeItem.value) return
-  activeItem.value.status = decisionStatus.value
-  activeItem.value.catatanVerifikator = decisionCatatan.value.trim()
+  dadukStore.verifySubmission(activeItem.value.id, decisionStatus.value, decisionCatatan.value)
   triggerToast(`Verifikasi untuk ${activeItem.value.unitKode} (${activeItem.value.jenisLaporan}) berhasil disimpan!`)
   closeModal()
+}
+
+function downloadSubmittedFile(row: DadukSubmission) {
+  if (row.fileDataUrl) {
+    const a = document.createElement('a')
+    a.href = row.fileDataUrl
+    a.download = row.namaFile
+    a.click()
+    return
+  }
+  const blob = new Blob(
+    [
+      `DOKUMEN PELAPORAN BAKAYUH\nUnit: ${row.unitName} (${row.unitKode})\nJenis: ${row.jenisLaporan}\nPeriode: ${row.periode}\nTanggal: ${row.tanggalKirim}\nStatus: ${row.status}\nCatatan Pengirim: ${row.catatanPengirim || '-'}\nCatatan Verifikator: ${row.catatanVerifikator || '-'}`,
+    ],
+    { type: 'application/pdf' },
+  )
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = row.namaFile
+  a.click()
+  URL.revokeObjectURL(url)
 }
 </script>
 
@@ -302,13 +242,17 @@ function saveVerification() {
 
               <!-- DOKUMEN -->
               <td class="py-3.5 px-4">
-                <div class="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-medium cursor-pointer">
+                <button
+                  type="button"
+                  @click="downloadSubmittedFile(row)"
+                  class="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-medium cursor-pointer text-left"
+                >
                   <svg class="w-4 h-4 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
-                  <span class="truncate max-w-[180px]">{{ row.namaFile }}</span>
+                  <span class="truncate max-w-[180px] underline-offset-2 hover:underline">{{ row.namaFile }}</span>
                   <span class="text-[10px] text-slate-400 font-normal">({{ row.ukuranFile }})</span>
-                </div>
+                </button>
               </td>
 
               <!-- STATUS -->
@@ -396,7 +340,13 @@ function saveVerification() {
             </div>
             <div class="flex justify-between items-center pt-1 border-t border-slate-200">
               <span class="text-slate-500 font-semibold">Berkas:</span>
-              <span class="font-bold text-blue-600 truncate max-w-[240px]">{{ activeItem.namaFile }}</span>
+              <button
+                type="button"
+                @click="downloadSubmittedFile(activeItem)"
+                class="font-bold text-blue-600 hover:text-blue-800 underline truncate max-w-[240px] cursor-pointer text-right"
+              >
+                {{ activeItem.namaFile }}
+              </button>
             </div>
           </div>
 

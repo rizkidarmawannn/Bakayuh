@@ -1,20 +1,27 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import {
+  useDadukLaporanStore,
+  type DadukSubmission,
+  type LaporanUnitRow,
+} from '@/composables/useDadukLaporanStore'
 
-const { isOperatorSatker, userUnitCode } = useAuth()
+const { isOperatorSatker, userUnitCode, user } = useAuth()
+const dadukStore = useDadukLaporanStore()
 
 type LaporanMode = 'bulanan' | 'triwulan'
 const laporanPeriodMode = ref<LaporanMode>('bulanan')
 const laporanSelectedYear = ref<number>(2026)
 const laporanYearOptions = [2026, 2025, 2024]
 
-interface LaporanUnitRow {
-  unitKode: string
-  unitName: string
-  bulananStatus: Record<string, 'terlambat' | 'belum_waktunya' | 'diterima' | 'menunggu' | 'perbaikan' | 'waktunya'>
-  triwulanStatus: Record<string, 'terlambat' | 'belum_waktunya' | 'diterima' | 'menunggu' | 'perbaikan' | 'waktunya'>
-  kepatuhan: number
+const unitFullNameMap: Record<string, string> = {
+  AHU: 'Administrasi Hukum Umum',
+  KI: 'Kekayaan Intelektual',
+  PP: 'Peraturan Perundang-Undangan',
+  BPHN: 'Badan Pembinaan Hukum Nasional',
+  BSK: 'Badan Strategi Kebijakan',
+  Setjen: 'Bagian Tata Usaha dan Umum',
 }
 
 const laporanBulananCols = [
@@ -39,86 +46,8 @@ const laporanTriwulanCols = [
   { key: 'tw4', label: 'TW IV', labelLong: 'Triwulan IV', date: '10/01' },
 ]
 
-const laporanUnitsData = ref<LaporanUnitRow[]>([
-  {
-    unitKode: 'Setjen',
-    unitName: 'Bagian Tata Usaha dan Umum',
-    bulananStatus: {
-      jan: 'terlambat', feb: 'terlambat', mar: 'terlambat', apr: 'terlambat',
-      mei: 'terlambat', jun: 'terlambat', jul: 'terlambat', agu: 'terlambat',
-      sep: 'terlambat', okt: 'belum_waktunya', nov: 'belum_waktunya', des: 'belum_waktunya',
-    },
-    triwulanStatus: {
-      tw1: 'terlambat', tw2: 'terlambat', tw3: 'terlambat', tw4: 'belum_waktunya',
-    },
-    kepatuhan: 0,
-  },
-  {
-    unitKode: 'AHU',
-    unitName: 'Administrasi Hukum Umum',
-    bulananStatus: {
-      jan: 'terlambat', feb: 'terlambat', mar: 'terlambat', apr: 'terlambat',
-      mei: 'terlambat', jun: 'terlambat', jul: 'terlambat', agu: 'terlambat',
-      sep: 'terlambat', okt: 'belum_waktunya', nov: 'belum_waktunya', des: 'belum_waktunya',
-    },
-    triwulanStatus: {
-      tw1: 'terlambat', tw2: 'terlambat', tw3: 'terlambat', tw4: 'belum_waktunya',
-    },
-    kepatuhan: 0,
-  },
-  {
-    unitKode: 'KI',
-    unitName: 'Kekayaan Intelektual',
-    bulananStatus: {
-      jan: 'terlambat', feb: 'terlambat', mar: 'terlambat', apr: 'terlambat',
-      mei: 'terlambat', jun: 'terlambat', jul: 'terlambat', agu: 'terlambat',
-      sep: 'terlambat', okt: 'belum_waktunya', nov: 'belum_waktunya', des: 'belum_waktunya',
-    },
-    triwulanStatus: {
-      tw1: 'terlambat', tw2: 'terlambat', tw3: 'terlambat', tw4: 'belum_waktunya',
-    },
-    kepatuhan: 0,
-  },
-  {
-    unitKode: 'PP',
-    unitName: 'Peraturan Perundang-Undangan',
-    bulananStatus: {
-      jan: 'terlambat', feb: 'terlambat', mar: 'terlambat', apr: 'terlambat',
-      mei: 'terlambat', jun: 'terlambat', jul: 'terlambat', agu: 'terlambat',
-      sep: 'terlambat', okt: 'belum_waktunya', nov: 'belum_waktunya', des: 'belum_waktunya',
-    },
-    triwulanStatus: {
-      tw1: 'terlambat', tw2: 'terlambat', tw3: 'terlambat', tw4: 'belum_waktunya',
-    },
-    kepatuhan: 0,
-  },
-  {
-    unitKode: 'BPHN',
-    unitName: 'Badan Pembinaan Hukum Nasional',
-    bulananStatus: {
-      jan: 'terlambat', feb: 'terlambat', mar: 'terlambat', apr: 'terlambat',
-      mei: 'terlambat', jun: 'terlambat', jul: 'terlambat', agu: 'terlambat',
-      sep: 'terlambat', okt: 'belum_waktunya', nov: 'belum_waktunya', des: 'belum_waktunya',
-    },
-    triwulanStatus: {
-      tw1: 'terlambat', tw2: 'terlambat', tw3: 'terlambat', tw4: 'belum_waktunya',
-    },
-    kepatuhan: 0,
-  },
-  {
-    unitKode: 'BSK',
-    unitName: 'Badan Strategi Kebijakan',
-    bulananStatus: {
-      jan: 'terlambat', feb: 'terlambat', mar: 'terlambat', apr: 'terlambat',
-      mei: 'terlambat', jun: 'terlambat', jul: 'terlambat', agu: 'terlambat',
-      sep: 'terlambat', okt: 'belum_waktunya', nov: 'belum_waktunya', des: 'belum_waktunya',
-    },
-    triwulanStatus: {
-      tw1: 'terlambat', tw2: 'terlambat', tw3: 'terlambat', tw4: 'belum_waktunya',
-    },
-    kepatuhan: 0,
-  },
-])
+// Bound to reactive singleton store with localStorage persistence
+const laporanUnitsData = dadukStore.unitsData
 
 const defaultFallbackRow: LaporanUnitRow = {
   unitKode: 'AHU',
@@ -197,15 +126,30 @@ const showUploadModal = ref(false)
 const uploadTargetPeriod = ref('')
 const uploadTargetKey = ref('')
 const uploadFileName = ref('')
+const uploadFileSize = ref('')
 const uploadNotes = ref('')
+const existingSubmission = ref<DadukSubmission | null>(null)
 const showToast = ref(false)
 const toastMessage = ref('')
 
 function openUploadModal(periodLabel: string, periodKey: string) {
   uploadTargetPeriod.value = `${periodLabel} ${laporanSelectedYear.value}`
   uploadTargetKey.value = periodKey
-  uploadFileName.value = ''
-  uploadNotes.value = ''
+
+  const unitCode = userUnitCode.value || 'AHU'
+  const existing = dadukStore.getUnitSubmission(unitCode, periodKey)
+  if (existing) {
+    existingSubmission.value = existing
+    uploadFileName.value = existing.namaFile
+    uploadFileSize.value = existing.ukuranFile
+    uploadNotes.value = existing.catatanPengirim || ''
+  } else {
+    existingSubmission.value = null
+    uploadFileName.value = ''
+    uploadFileSize.value = ''
+    uploadNotes.value = ''
+  }
+
   showUploadModal.value = true
 }
 
@@ -216,22 +160,61 @@ function closeUploadModal() {
 function handleFileSelect(e: Event) {
   const input = e.target as HTMLInputElement
   if (input.files && input.files[0]) {
-    uploadFileName.value = input.files[0].name
+    const file = input.files[0]
+    uploadFileName.value = file.name
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1)
+    uploadFileSize.value = `${sizeMb} MB`
   }
 }
 
 function submitLaporan() {
-  if (isOperatorSatker.value && uploadTargetKey.value) {
-    const row = currentOperatorUnitRow.value
-    if (laporanPeriodMode.value === 'bulanan') {
-      row.bulananStatus[uploadTargetKey.value] = 'menunggu'
-    } else {
-      row.triwulanStatus[uploadTargetKey.value] = 'menunggu'
-    }
-  }
+  if (!uploadTargetKey.value) return
+
+  const unitCode = userUnitCode.value || 'AHU'
+  const unitName = unitFullNameMap[unitCode.toUpperCase()] || user.value?.name || 'Satuan Kerja'
+  const fileName =
+    uploadFileName.value.trim() ||
+    `Laporan_${uploadTargetKey.value.toUpperCase()}_${unitCode}_${laporanSelectedYear.value}.pdf`
+  const fileSize = uploadFileSize.value.trim() || '2.4 MB'
+  const jenis = laporanPeriodMode.value === 'bulanan' ? 'Laporan Bulanan' : 'Laporan Triwulan'
+
+  dadukStore.addOrUpdateSubmission({
+    unitKode: unitCode,
+    unitName,
+    jenisLaporan: jenis,
+    periode: uploadTargetPeriod.value,
+    periodeKey: uploadTargetKey.value,
+    periodeType: laporanPeriodMode.value,
+    tahun: laporanSelectedYear.value,
+    namaFile: fileName,
+    ukuranFile: fileSize,
+    catatanPengirim: uploadNotes.value.trim(),
+  })
 
   triggerToast('Laporan berhasil diunggah dan dikirim untuk verifikasi!')
   closeUploadModal()
+}
+
+function downloadSubmittedFile(sub: DadukSubmission) {
+  if (sub.fileDataUrl) {
+    const a = document.createElement('a')
+    a.href = sub.fileDataUrl
+    a.download = sub.namaFile
+    a.click()
+    return
+  }
+  const blob = new Blob(
+    [
+      `DOKUMEN PELAPORAN BAKAYUH\nUnit: ${sub.unitName} (${sub.unitKode})\nJenis: ${sub.jenisLaporan}\nPeriode: ${sub.periode}\nTanggal Kirim: ${sub.tanggalKirim}\nStatus: ${sub.status}\nCatatan Pengirim: ${sub.catatanPengirim || '-'}\nCatatan Verifikator: ${sub.catatanVerifikator || '-'}`,
+    ],
+    { type: 'application/pdf' },
+  )
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = sub.namaFile
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 function triggerToast(msg: string) {
@@ -437,25 +420,38 @@ function triggerToast(msg: string) {
           <!-- Bottom Action Link -->
           <div>
             <button
-              v-if="currentOperatorUnitRow.bulananStatus[m.key] === 'terlambat' || currentOperatorUnitRow.bulananStatus[m.key] === 'perbaikan'"
+              v-if="currentOperatorUnitRow.bulananStatus[m.key] === 'terlambat'"
               type="button"
               @click="openUploadModal(m.labelLong, m.key)"
               class="text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer underline-offset-2 hover:underline"
             >
               Klik untuk mengunggah
             </button>
-            <span
+            <button
+              v-else-if="currentOperatorUnitRow.bulananStatus[m.key] === 'perbaikan'"
+              type="button"
+              @click="openUploadModal(m.labelLong, m.key)"
+              class="text-xs text-rose-600 hover:text-rose-700 font-semibold cursor-pointer underline-offset-2 hover:underline inline-flex items-center gap-1"
+            >
+              <span>Unggah perbaikan</span>
+              <span>&rarr;</span>
+            </button>
+            <button
               v-else-if="currentOperatorUnitRow.bulananStatus[m.key] === 'menunggu'"
-              class="text-[11px] text-slate-400"
+              type="button"
+              @click="openUploadModal(m.labelLong, m.key)"
+              class="text-[11px] text-amber-600 hover:text-amber-700 font-semibold cursor-pointer underline-offset-2 hover:underline inline-flex items-center gap-1"
             >
-              Menunggu verifikasi
-            </span>
-            <span
+              <span>Menunggu verifikasi (Lihat)</span>
+            </button>
+            <button
               v-else-if="currentOperatorUnitRow.bulananStatus[m.key] === 'diterima'"
-              class="text-[11px] text-emerald-600 font-semibold"
+              type="button"
+              @click="openUploadModal(m.labelLong, m.key)"
+              class="text-[11px] text-emerald-600 hover:text-emerald-700 font-semibold cursor-pointer underline-offset-2 hover:underline inline-flex items-center gap-1"
             >
-              Sudah terverifikasi
-            </span>
+              <span>Sudah terverifikasi (Lihat)</span>
+            </button>
             <span v-else class="text-[11px] text-transparent select-none">
               -
             </span>
@@ -515,25 +511,38 @@ function triggerToast(msg: string) {
           <!-- Bottom Action Link -->
           <div>
             <button
-              v-if="currentOperatorUnitRow.triwulanStatus[tw.key] === 'terlambat' || currentOperatorUnitRow.triwulanStatus[tw.key] === 'perbaikan'"
+              v-if="currentOperatorUnitRow.triwulanStatus[tw.key] === 'terlambat'"
               type="button"
               @click="openUploadModal(tw.labelLong, tw.key)"
               class="text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer underline-offset-2 hover:underline"
             >
               Klik untuk mengunggah
             </button>
-            <span
+            <button
+              v-else-if="currentOperatorUnitRow.triwulanStatus[tw.key] === 'perbaikan'"
+              type="button"
+              @click="openUploadModal(tw.labelLong, tw.key)"
+              class="text-xs text-rose-600 hover:text-rose-700 font-semibold cursor-pointer underline-offset-2 hover:underline inline-flex items-center gap-1"
+            >
+              <span>Unggah perbaikan</span>
+              <span>&rarr;</span>
+            </button>
+            <button
               v-else-if="currentOperatorUnitRow.triwulanStatus[tw.key] === 'menunggu'"
-              class="text-[11px] text-slate-400"
+              type="button"
+              @click="openUploadModal(tw.labelLong, tw.key)"
+              class="text-[11px] text-amber-600 hover:text-amber-700 font-semibold cursor-pointer underline-offset-2 hover:underline inline-flex items-center gap-1"
             >
-              Menunggu verifikasi
-            </span>
-            <span
+              <span>Menunggu verifikasi (Lihat)</span>
+            </button>
+            <button
               v-else-if="currentOperatorUnitRow.triwulanStatus[tw.key] === 'diterima'"
-              class="text-[11px] text-emerald-600 font-semibold"
+              type="button"
+              @click="openUploadModal(tw.labelLong, tw.key)"
+              class="text-[11px] text-emerald-600 hover:text-emerald-700 font-semibold cursor-pointer underline-offset-2 hover:underline inline-flex items-center gap-1"
             >
-              Sudah terverifikasi
-            </span>
+              <span>Sudah terverifikasi (Lihat)</span>
+            </button>
             <span v-else class="text-[11px] text-transparent select-none">
               -
             </span>
@@ -694,20 +703,80 @@ function triggerToast(msg: string) {
       <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-scale-up">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
-            <h2 class="text-base font-bold text-slate-900">Unggah Laporan</h2>
-            <p class="text-xs text-slate-500 mt-0.5">{{ uploadTargetPeriod }} &bull; Unit {{ userUnitCode || 'AHU' }}</p>
+            <h2 class="text-base font-bold text-slate-900">
+              {{ existingSubmission ? 'Detail & Pengunggahan Laporan' : 'Unggah Laporan' }}
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              {{ uploadTargetPeriod }} &bull; Unit {{ userUnitCode || 'AHU' }} ({{ unitFullNameMap[(userUnitCode || 'AHU').toUpperCase()] }})
+            </p>
           </div>
-          <button type="button" @click="closeUploadModal" class="text-slate-400 hover:text-slate-600">
+          <button type="button" @click="closeUploadModal" class="text-slate-400 hover:text-slate-600 cursor-pointer">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
+        <!-- Existing Status & Verifier Notes Banner if submitted -->
+        <div v-if="existingSubmission" class="space-y-3">
+          <div
+            class="p-3.5 rounded-xl border text-xs"
+            :class="{
+              'bg-amber-50 border-amber-200 text-amber-900': existingSubmission.status === 'Menunggu',
+              'bg-rose-50 border-rose-200 text-rose-900': existingSubmission.status === 'Perlu Perbaikan',
+              'bg-emerald-50 border-emerald-200 text-emerald-900': existingSubmission.status === 'Diterima',
+            }"
+          >
+            <div class="flex items-center justify-between font-bold">
+              <span class="inline-flex items-center gap-1.5">
+                <span
+                  class="w-2.5 h-2.5 rounded-full"
+                  :class="{
+                    'bg-amber-500': existingSubmission.status === 'Menunggu',
+                    'bg-rose-500': existingSubmission.status === 'Perlu Perbaikan',
+                    'bg-emerald-500': existingSubmission.status === 'Diterima',
+                  }"
+                ></span>
+                Status: {{ existingSubmission.status }}
+              </span>
+              <span class="text-[11px] font-normal opacity-80">{{ existingSubmission.tanggalKirim }}</span>
+            </div>
+            <div v-if="existingSubmission.catatanVerifikator" class="mt-2 pt-2 border-t border-current/15">
+              <span class="font-bold">Catatan Verifikator Kanwil:</span>
+              <p class="mt-0.5">{{ existingSubmission.catatanVerifikator }}</p>
+            </div>
+            <div v-else-if="existingSubmission.status === 'Menunggu'" class="mt-1 text-[11px] text-amber-700">
+              Dokumen telah diterima sistem dan sedang dalam antrean verifikasi Tim Kanwil.
+            </div>
+          </div>
+
+          <!-- Existing file download pill -->
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+            <div class="flex items-center gap-2 truncate pr-2">
+              <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <div class="truncate">
+                <p class="font-semibold text-slate-800 text-xs truncate">{{ existingSubmission.namaFile }}</p>
+                <p class="text-[10px] text-slate-400">{{ existingSubmission.ukuranFile }} &bull; Diunggah {{ existingSubmission.tanggalKirim }}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              @click="downloadSubmittedFile(existingSubmission)"
+              class="px-2.5 py-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0 border border-blue-200 cursor-pointer"
+            >
+              Unduh Berkas
+            </button>
+          </div>
+        </div>
+
         <div class="space-y-4 text-xs">
           <!-- File Upload Zone -->
           <div>
-            <label class="block font-bold text-slate-700 mb-1.5">Berkas Laporan (PDF, Word, atau Excel)</label>
+            <label class="block font-bold text-slate-700 mb-1.5">
+              {{ existingSubmission ? 'Ganti / Unggah Berkas Baru' : 'Berkas Laporan (PDF, Word, atau Excel)' }}
+            </label>
             <label class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer bg-slate-50/50 hover:bg-blue-50/20 transition-colors">
               <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -736,16 +805,16 @@ function triggerToast(msg: string) {
           <button
             type="button"
             @click="closeUploadModal"
-            class="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
+            class="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 cursor-pointer"
           >
-            Batal
+            {{ existingSubmission && existingSubmission.status === 'Diterima' ? 'Tutup' : 'Batal' }}
           </button>
           <button
             type="button"
             @click="submitLaporan"
-            class="px-5 py-2 text-xs font-semibold rounded-lg bg-[#0B2A6F] hover:bg-[#1D4ED8] text-white shadow-2xs"
+            class="px-5 py-2 text-xs font-semibold rounded-lg bg-[#0B2A6F] hover:bg-[#1D4ED8] text-white shadow-2xs cursor-pointer font-bold"
           >
-            Kirim Laporan
+            {{ existingSubmission ? 'Kirim Pembaruan' : 'Kirim Laporan' }}
           </button>
         </div>
       </div>
