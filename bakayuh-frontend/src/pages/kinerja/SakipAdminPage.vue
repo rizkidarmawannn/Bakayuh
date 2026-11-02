@@ -135,6 +135,51 @@ const totalPanel = computed(() => {
   return hasVal ? formatDec(sum) : '-'
 })
 
+
+// Keterangan Bobot Nilai (Image 2)
+const keteranganBobot = [
+  {
+    predikat: 'AA',
+    bobot: 100,
+    keterangan: 'Jika kualitas seluruh kriteria telah terpenuhi (100%) dan terdapat upaya inovatif serta layak menjadi percontohan secara nasional.',
+  },
+  {
+    predikat: 'A',
+    bobot: 90,
+    keterangan: 'Jika kualitas seluruh kriteria telah terpenuhi (100%) dan terdapat beberapa upaya yang bisa dihargai dari pemenuhan kriteria tersebut.',
+  },
+  {
+    predikat: 'BB',
+    bobot: 80,
+    keterangan: 'Jika kualitas seluruh kriteria telah terpenuhi (100%) sesuai dengan mandat kebijakan.',
+  },
+  {
+    predikat: 'B',
+    bobot: 70,
+    keterangan: 'Jika kualitas sebagian besar kriteria telah terpenuhi (>75%-100%).',
+  },
+  {
+    predikat: 'CC',
+    bobot: 60,
+    keterangan: 'Jika kualitas sebagian besar kriteria telah terpenuhi (>50%-75%).',
+  },
+  {
+    predikat: 'C',
+    bobot: 50,
+    keterangan: 'Jika kualitas sebagian kecil kriteria telah terpenuhi (>25%-50%).',
+  },
+  {
+    predikat: 'D',
+    bobot: 30,
+    keterangan: 'Jika kriteria penilaian akuntabilitas kinerja telah mulai dipenuhi (>0%-25%).',
+  },
+  {
+    predikat: 'E',
+    bobot: 0,
+    keterangan: 'Jika sama sekali tidak ada upaya dalam pemenuhan kriteria penilaian akuntabilitas kinerja.',
+  },
+]
+
 // Nilai Akhir SAKIP & Sumber Nilai (Gambar 2)
 const nilaiAkhirSakip = computed(() => {
   if (totalPanel.value !== '-') return totalPanel.value
@@ -142,6 +187,20 @@ const nilaiAkhirSakip = computed(() => {
   if (totalPembina.value !== '-') return totalPembina.value
   if (totalMandiri.value !== '-') return totalMandiri.value
   return '-'
+})
+
+const predikatNilaiAkhir = computed<string | null>(() => {
+  const num = parseVal(nilaiAkhirSakip.value)
+  if (num === null) return null
+  const match = keteranganBobot.find((item) => num >= item.bobot)
+  return match ? match.predikat : 'E'
+})
+
+const keteranganNilaiAkhir = computed<string>(() => {
+  const num = parseVal(nilaiAkhirSakip.value)
+  if (num === null) return ''
+  const match = keteranganBobot.find((item) => num >= item.bobot)
+  return match ? `${match.predikat} (Bobot ${match.bobot}): ${match.keterangan}` : ''
 })
 
 const sumberNilaiAkhir = computed(() => {
@@ -274,49 +333,6 @@ onMounted(() => {
   loadFromStorage()
 })
 
-// Keterangan Bobot Nilai (Image 2)
-const keteranganBobot = [
-  {
-    predikat: 'AA',
-    bobot: 100,
-    keterangan: 'Jika kualitas seluruh kriteria telah terpenuhi (100%) dan terdapat upaya inovatif serta layak menjadi percontohan secara nasional.',
-  },
-  {
-    predikat: 'A',
-    bobot: 90,
-    keterangan: 'Jika kualitas seluruh kriteria telah terpenuhi (100%) dan terdapat beberapa upaya yang bisa dihargai dari pemenuhan kriteria tersebut.',
-  },
-  {
-    predikat: 'BB',
-    bobot: 80,
-    keterangan: 'Jika kualitas seluruh kriteria telah terpenuhi (100%) sesuai dengan mandat kebijakan.',
-  },
-  {
-    predikat: 'B',
-    bobot: 70,
-    keterangan: 'Jika kualitas sebagian besar kriteria telah terpenuhi (>75%-100%).',
-  },
-  {
-    predikat: 'CC',
-    bobot: 60,
-    keterangan: 'Jika kualitas sebagian besar kriteria telah terpenuhi (>50%-75%).',
-  },
-  {
-    predikat: 'C',
-    bobot: 50,
-    keterangan: 'Jika kualitas sebagian kecil kriteria telah terpenuhi (>25%-50%).',
-  },
-  {
-    predikat: 'D',
-    bobot: 30,
-    keterangan: 'Jika kriteria penilaian akuntabilitas kinerja telah mulai dipenuhi (>0%-25%).',
-  },
-  {
-    predikat: 'E',
-    bobot: 0,
-    keterangan: 'Jika sama sekali tidak ada upaya dalam pemenuhan kriteria penilaian akuntabilitas kinerja.',
-  },
-]
 </script>
 
 <template>
@@ -501,14 +517,14 @@ const keteranganBobot = [
           </p>
         </div>
 
-        <!-- Right Side: Nilai Akhir SAKIP Widget (Format: Nilai Akhir SAKIP 2026 : [nilai], digeser 25px ke kiri) -->
-        <div class="text-left md:text-right flex-shrink-0 pt-1 -translate-x-[25px]">
-          <div class="flex items-baseline md:justify-end gap-2">
-            <span class="text-sm sm:text-base font-bold text-slate-800">
+        <!-- Right Side: Nilai Akhir SAKIP Widget (Format: Nilai Akhir SAKIP 2026 : [nilai] ([predikat]), digeser 27px ke kiri) -->
+        <div class="text-left md:text-right flex-shrink-0 pt-1 -translate-x-[27px]">
+          <div class="flex items-baseline md:justify-end gap-1.5 text-sm sm:text-base">
+            <span class="font-bold text-slate-800">
               Nilai Akhir SAKIP {{ selectedYear }} :
             </span>
-            <span class="text-2xl sm:text-3xl font-black text-[#0B2A6F] tracking-tight">
-              {{ nilaiAkhirSakip }}
+            <span class="font-extrabold text-[#0B2A6F] tracking-tight">
+              {{ nilaiAkhirSakip }}<span v-if="predikatNilaiAkhir" :title="keteranganNilaiAkhir" class="ml-1 text-[#0B2A6F]"> ({{ predikatNilaiAkhir }})</span>
             </span>
           </div>
           <div class="text-xs text-slate-500 mt-0.5 font-normal">
@@ -531,11 +547,16 @@ const keteranganBobot = [
                 v-for="(row, idx) in keteranganBobot"
                 :key="idx"
                 class="border-b last:border-b-0 border-slate-200 hover:bg-slate-50/50 transition-colors"
+                :class="row.predikat === predikatNilaiAkhir ? 'bg-blue-50/80 font-semibold' : ''"
               >
                 <td class="py-3.5 px-4 sm:px-5 font-semibold text-slate-800 w-48 sm:w-60 border-r border-slate-200 align-middle whitespace-nowrap">
+                  <span
+                    v-if="row.predikat === predikatNilaiAkhir"
+                    class="inline-block w-2 h-2 rounded-full bg-[#1D4ED8] mr-2"
+                  ></span>
                   {{ row.predikat }} (Bobot nilai {{ row.bobot }})
                 </td>
-                <td class="py-3.5 px-4 sm:px-5 text-slate-600 align-middle leading-relaxed">
+                <td class="py-3.5 px-4 sm:px-5 text-slate-600 align-middle leading-relaxed" :class="row.predikat === predikatNilaiAkhir ? 'text-slate-800 font-medium' : ''">
                   {{ row.keterangan }}
                 </td>
               </tr>
