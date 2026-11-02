@@ -102,7 +102,27 @@ export async function exportToExcel(options: ExcelExportOptions) {
 
   currentRowIdx++
 
-  // 3. BARIS DATA TABEL (DENGAN GARIS TABEL & STRIPING)
+  // 3. TENTUKAN LEBAR KOLOM TERLEBIH DAHULU (UNTUK ESTIMASI TINGGI BARIS)
+  const effectiveColWidths: number[] =
+    colWidths && colWidths.length > 0
+      ? colWidths
+      : headers.map((h, colIdx) => {
+          let maxLen = h.length
+          rows.forEach((r) => {
+            const val = r[colIdx] != null ? String(r[colIdx]) : ''
+            if (val.length > maxLen) {
+              maxLen = Math.min(val.length, 65)
+            }
+          })
+          return Math.max(maxLen + 4, 10)
+        })
+
+  // Terapkan lebar kolom ke worksheet
+  effectiveColWidths.forEach((w, idx) => {
+    worksheet.getColumn(idx + 1).width = w
+  })
+
+  // 4. BARIS DATA TABEL (DENGAN GARIS TABEL, STRIPING, & TINGGI OTOMATIS TIDAK TERGENCET)
   const isNumericOrShort = (header: string) => {
     const h = header.toLowerCase()
     return (
@@ -132,6 +152,7 @@ export async function exportToExcel(options: ExcelExportOptions) {
   rows.forEach((rowValues, rIdx) => {
     const dataRow = worksheet.getRow(currentRowIdx)
     const isZebra = rIdx % 2 === 1
+    let maxLinesInRow = 1
 
     for (let c = 1; c <= headers.length; c++) {
       let rawVal = rowValues[c - 1]
@@ -145,6 +166,21 @@ export async function exportToExcel(options: ExcelExportOptions) {
 
       const headerName = headers[c - 1] || ''
       const isShort = isNumericOrShort(headerName)
+      const colW = effectiveColWidths[c - 1] || 15
+
+      // Hitung perkiraan jumlah baris teks untuk autosize tinggi baris
+      const textStr = String(rawVal ?? '')
+      if (textStr && !isShort) {
+        const splitLines = textStr.split('\n')
+        let totalCellLines = 0
+        for (const line of splitLines) {
+          const wrapCount = Math.ceil(line.length / Math.max(colW - 3, 8)) || 1
+          totalCellLines += wrapCount
+        }
+        if (totalCellLines > maxLinesInRow) {
+          maxLinesInRow = totalCellLines
+        }
+      }
 
       // Styling Sel Data
       cell.font = {
@@ -177,27 +213,10 @@ export async function exportToExcel(options: ExcelExportOptions) {
       }
     }
 
-    dataRow.height = 22
+    // Atur tinggi baris secara dinamis dengan padding lega agar tidak tergencet sama sekali
+    dataRow.height = Math.max(26, maxLinesInRow * 18 + 8)
     currentRowIdx++
   })
-
-  // 4. ATUR LEBAR KOLOM
-  if (colWidths && colWidths.length > 0) {
-    colWidths.forEach((w, idx) => {
-      worksheet.getColumn(idx + 1).width = w
-    })
-  } else {
-    headers.forEach((h, colIdx) => {
-      let maxLen = h.length
-      rows.forEach((r) => {
-        const val = r[colIdx] != null ? String(r[colIdx]) : ''
-        if (val.length > maxLen) {
-          maxLen = Math.min(val.length, 50)
-        }
-      })
-      worksheet.getColumn(colIdx + 1).width = Math.max(maxLen + 3, 10)
-    })
-  }
 
   // 5. DOWNLOAD FILE
   const finalFileName = fileName.endsWith('.xlsx') ? fileName : `${fileName}.xlsx`

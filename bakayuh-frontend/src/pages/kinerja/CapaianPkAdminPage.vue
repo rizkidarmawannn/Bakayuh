@@ -720,32 +720,32 @@ function getCapaianExportData() {
   const colWidths = [
     6,  // No
     12, // Unit
-    45, // Sasaran
-    50, // Indikator
+    55, // Sasaran Kinerja
+    65, // Indikator Kinerja Kegiatan
     14, // Target
     8,  // Jan
     8,  // Feb
     8,  // Mar
-    12, // Rekap TW I
-    35, // Keterangan TW I
+    14, // Rekap TW I
+    40, // Keterangan TW I
     8,  // Apr
     8,  // Mei
     8,  // Jun
-    12, // Rekap TW II
-    14, // s.d. Sem I
-    35, // Keterangan TW II
+    14, // Rekap TW II
+    15, // s.d. Sem I
+    40, // Keterangan TW II
     8,  // Jul
     8,  // Agu
     8,  // Sep
-    12, // Rekap TW III
-    12, // s.d. TW III
-    35, // Keterangan TW III
+    14, // Rekap TW III
+    14, // s.d. TW III
+    40, // Keterangan TW III
     8,  // Okt
     8,  // Nov
     8,  // Des
-    12, // Rekap TW IV
-    12, // s.d. TW IV
-    35, // Keterangan TW IV
+    14, // Rekap TW IV
+    14, // s.d. TW IV
+    40, // Keterangan TW IV
   ]
 
   return { headers, rows, fileName, colWidths }
