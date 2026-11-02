@@ -1330,25 +1330,47 @@ onUnmounted(() => {
       </div>
 
       <!-- 5 Horizontal Metric Summary Cards Floating Across Hero -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 mt-8 pt-2 relative z-10">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 mt-8 pt-2 relative z-10">
         <!-- 1. Renaksi diterima -->
         <div
           role="button"
           tabindex="0"
           @click="setTab('renaksi')"
-          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200 border border-amber-200/80 hover:border-amber-400 flex flex-col justify-between cursor-pointer select-none group relative overflow-hidden bg-gradient-to-b from-white via-white to-amber-50/20"
         >
-          <div class="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 flex items-center justify-center">
-            <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
-              <circle cx="24" cy="24" r="19" stroke="#E2E8F0" stroke-width="4.5" fill="none" />
-            </svg>
-            <span class="absolute inset-0 flex items-center justify-center font-bold text-xs text-slate-800">0%</span>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors truncate">
-              Renaksi diterima
+          <!-- Top subtle accent bar -->
+          <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500" />
+
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-1 mb-2.5">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+              <span class="font-bold text-xs sm:text-sm text-[#0B2A6F] leading-tight group-hover:text-amber-700 transition-colors">
+                Renaksi Diterima
+              </span>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-amber-100 text-amber-800 border border-amber-200 flex-shrink-0">
+              TW 4
             </span>
-            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">TW 4 &bull; 0 dari 0</span>
+          </div>
+
+          <!-- Score & Donut Dial -->
+          <div class="my-1 flex items-center justify-between gap-2">
+            <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F] font-mono tracking-tight group-hover:text-amber-700 transition-colors">
+              0%
+            </span>
+            <div class="relative w-10 h-10 flex-shrink-0 flex items-center justify-center">
+              <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" stroke="#E2E8F0" stroke-width="3.5" fill="none" />
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center font-bold text-[10px] text-slate-500">0%</span>
+            </div>
+          </div>
+
+          <!-- Footer Info -->
+          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100 mt-2">
+            <span class="font-medium text-slate-600">0 dari 0 selesai</span>
+            <span class="font-medium text-slate-400">Tahun 2026</span>
           </div>
         </div>
 
@@ -1357,28 +1379,50 @@ onUnmounted(() => {
           role="button"
           tabindex="0"
           @click="setTab('iku')"
-          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200 border border-blue-200/80 hover:border-blue-400 flex flex-col justify-between cursor-pointer select-none group relative overflow-hidden bg-gradient-to-b from-white via-white to-blue-50/20"
         >
-          <div class="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 flex items-center justify-center">
-            <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
-              <circle cx="24" cy="24" r="19" stroke="#E2E8F0" stroke-width="4.5" fill="none" />
-              <circle
-                cx="24" cy="24" r="19"
-                stroke="#1D4ED8"
-                stroke-width="4.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-dasharray="119.38"
-                stroke-dashoffset="102.67"
-              />
-            </svg>
-            <span class="absolute inset-0 flex items-center justify-center font-bold text-xs text-slate-800">14%</span>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors truncate">
-              Capaian PK terisi
+          <!-- Top subtle accent bar -->
+          <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500" />
+
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-1 mb-2.5">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+              <span class="font-bold text-xs sm:text-sm text-[#0B2A6F] leading-tight group-hover:text-blue-700 transition-colors">
+                Capaian PK Terisi
+              </span>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-blue-100 text-blue-800 border border-blue-200 flex-shrink-0">
+              14 Indikator
             </span>
-            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">2 dari 14 (2026)</span>
+          </div>
+
+          <!-- Score & Donut Dial -->
+          <div class="my-1 flex items-center justify-between gap-2">
+            <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F] font-mono tracking-tight group-hover:text-blue-700 transition-colors">
+              14%
+            </span>
+            <div class="relative w-10 h-10 flex-shrink-0 flex items-center justify-center">
+              <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" stroke="#E2E8F0" stroke-width="3.5" fill="none" />
+                <circle
+                  cx="18" cy="18" r="14"
+                  stroke="#1D4ED8"
+                  stroke-width="3.5"
+                  fill="none"
+                  stroke-linecap="round"
+                  stroke-dasharray="87.96"
+                  stroke-dashoffset="75.65"
+                />
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center font-bold text-[10px] text-blue-700">14%</span>
+            </div>
+          </div>
+
+          <!-- Footer Info -->
+          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100 mt-2">
+            <span class="font-medium text-slate-600">2 dari 14 terisi</span>
+            <span class="font-medium text-slate-400">Tahun 2026</span>
           </div>
         </div>
 
@@ -1387,19 +1431,41 @@ onUnmounted(() => {
           role="button"
           tabindex="0"
           @click="setTab('laporan')"
-          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200 border border-indigo-200/80 hover:border-indigo-400 flex flex-col justify-between cursor-pointer select-none group relative overflow-hidden bg-gradient-to-b from-white via-white to-indigo-50/20"
         >
-          <div class="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 flex items-center justify-center">
-            <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
-              <circle cx="24" cy="24" r="19" stroke="#E2E8F0" stroke-width="4.5" fill="none" />
-            </svg>
-            <span class="absolute inset-0 flex items-center justify-center font-bold text-xs text-slate-800">0%</span>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors truncate">
-              Laporan diterima
+          <!-- Top subtle accent bar -->
+          <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
+
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-1 mb-2.5">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0" />
+              <span class="font-bold text-xs sm:text-sm text-[#0B2A6F] leading-tight group-hover:text-indigo-700 transition-colors">
+                Laporan Diterima
+              </span>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-indigo-100 text-indigo-800 border border-indigo-200 flex-shrink-0">
+              Bulanan &amp; TW
             </span>
-            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">0 dari 72 (2026)</span>
+          </div>
+
+          <!-- Score & Donut Dial -->
+          <div class="my-1 flex items-center justify-between gap-2">
+            <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F] font-mono tracking-tight group-hover:text-indigo-700 transition-colors">
+              0%
+            </span>
+            <div class="relative w-10 h-10 flex-shrink-0 flex items-center justify-center">
+              <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" stroke="#E2E8F0" stroke-width="3.5" fill="none" />
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center font-bold text-[10px] text-slate-500">0%</span>
+            </div>
+          </div>
+
+          <!-- Footer Info -->
+          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100 mt-2">
+            <span class="font-medium text-slate-600">0 dari 72 diterima</span>
+            <span class="font-medium text-slate-400">Tahun 2026</span>
           </div>
         </div>
 
@@ -1408,16 +1474,38 @@ onUnmounted(() => {
           role="button"
           tabindex="0"
           @click="setTab('ikpa')"
-          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200 border border-blue-200/80 hover:border-blue-400 flex flex-col justify-between cursor-pointer select-none group relative overflow-hidden bg-gradient-to-b from-white via-white to-blue-50/20"
         >
-          <div class="flex-shrink-0 flex items-center justify-center">
-            <span class="text-2xl sm:text-3xl font-black text-[#0B2A6F] tracking-tight">96,49</span>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors truncate">
-              Nilai IKPA
+          <!-- Top subtle accent bar -->
+          <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-600 via-sky-500 to-blue-600" />
+
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-1 mb-2.5">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0" />
+              <span class="font-bold text-xs sm:text-sm text-[#0B2A6F] leading-tight group-hover:text-blue-700 transition-colors">
+                Nilai IKPA
+              </span>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-blue-100 text-blue-800 border border-blue-200 flex-shrink-0">
+              Sep 2026
             </span>
-            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">rata-rata Sep 2026</span>
+          </div>
+
+          <!-- Score & Label -->
+          <div class="my-1 flex items-baseline justify-between gap-2">
+            <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F] font-mono tracking-tight group-hover:text-blue-700 transition-colors">
+              96,49
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200/80">
+              Sangat Baik
+            </span>
+          </div>
+
+          <!-- Footer Info -->
+          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100 mt-2">
+            <span class="font-medium text-slate-600">Rata-rata Seluruh Satker</span>
+            <span class="font-medium text-slate-400">Target &gt;95</span>
           </div>
         </div>
 
@@ -1426,21 +1514,38 @@ onUnmounted(() => {
           role="button"
           tabindex="0"
           @click="setTab('sakip')"
-          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-purple-100 flex items-center gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none col-span-2 sm:col-span-1 group"
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200 border border-purple-200/90 hover:border-purple-400 flex flex-col justify-between cursor-pointer select-none group relative overflow-hidden bg-gradient-to-b from-white via-white to-purple-50/20"
         >
-          <div class="flex-shrink-0 flex items-center justify-center">
-            <span class="text-2xl sm:text-3xl font-black text-[#0B2A6F] tracking-tight">{{ publicSakipSummary.scoreLabel }}</span>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <div class="flex items-center gap-1.5">
-              <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-purple-600 transition-colors truncate">
+          <!-- Top subtle accent bar -->
+          <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600" />
+
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-1 mb-2.5">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-purple-600 flex-shrink-0" />
+              <span class="font-bold text-xs sm:text-sm text-[#0B2A6F] leading-tight group-hover:text-purple-700 transition-colors">
                 Nilai SAKIP
               </span>
-              <span class="px-1.5 py-0.2 rounded font-bold text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200">
-                {{ publicSakipSummary.predikat }}
-              </span>
             </div>
-            <span class="text-[11px] sm:text-xs text-purple-700 font-medium mt-0.5 truncate">{{ publicSakipSummary.kategori }} &bull; {{ publicSakipYear }}</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-extrabold font-mono bg-emerald-100 text-emerald-800 border border-emerald-300 flex-shrink-0 shadow-2xs">
+              Predikat {{ publicSakipSummary.predikat }}
+            </span>
+          </div>
+
+          <!-- Score & Label -->
+          <div class="my-1 flex items-baseline justify-between gap-2">
+            <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F] font-mono tracking-tight group-hover:text-purple-700 transition-colors">
+              {{ publicSakipSummary.scoreLabel }}
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200/80">
+              {{ publicSakipSummary.kategori }}
+            </span>
+          </div>
+
+          <!-- Footer Info -->
+          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100 mt-2">
+            <span class="font-medium text-slate-600">Nilai Akhir Itjen</span>
+            <span class="font-medium text-slate-400">Tahun {{ publicSakipYear }}</span>
           </div>
         </div>
       </div>
