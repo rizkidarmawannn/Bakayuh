@@ -9,18 +9,214 @@ import type { DashboardSummary, TahunAnggaran } from '@/types'
 const { user, isSuperAdmin, isAdminKanwil, isOperatorSatker, userUnitCode } = useAuth()
 const dadukStore = useDadukLaporanStore()
 
-const operatorMenungguCount = computed(() => {
-  const code = (userUnitCode.value || 'AHU').toUpperCase()
-  return dadukStore.submissions.value.filter(
-    (s) => s.unitKode.toUpperCase() === code && s.status === 'Menunggu',
-  ).length
+const targetUnitCode = computed(() => (userUnitCode.value || 'AHU').toUpperCase())
+
+const operatorUnitRow = computed(() => {
+  const code = targetUnitCode.value
+  return (
+    dadukStore.unitsData.value.find((u) => u.unitKode.toUpperCase() === code) ||
+    dadukStore.getUnitRow(code) || {
+      unitKode: code,
+      unitName: userUnitFullName.value,
+      bulananStatus: {},
+      triwulanStatus: {},
+      kepatuhan: 0,
+    }
+  )
 })
 
-const operatorPerbaikanCount = computed(() => {
-  const code = (userUnitCode.value || 'AHU').toUpperCase()
+// Metrics computed dynamically from operatorUnitRow
+const operatorMetrics = computed(() => {
+  const row = operatorUnitRow.value
+  const bVals = Object.entries(row.bulananStatus || {})
+  const tVals = Object.entries(row.triwulanStatus || {})
+
+  let bulananDiterima = 0
+  let bulananMenunggu = 0
+  let bulananPerbaikan = 0
+  let bulananTerlambat = 0
+  let bulananDue = 0
+
+  for (const [, st] of bVals) {
+    if (st === 'diterima') bulananDiterima++
+    else if (st === 'menunggu') bulananMenunggu++
+    else if (st === 'perbaikan') bulananPerbaikan++
+    else if (st === 'terlambat') bulananTerlambat++
+
+    if (st !== 'belum_waktunya') bulananDue++
+  }
+
+  let triwulanDiterima = 0
+  let triwulanMenunggu = 0
+  let triwulanPerbaikan = 0
+  let triwulanTerlambat = 0
+  let triwulanDue = 0
+
+  for (const [, st] of tVals) {
+    if (st === 'diterima') triwulanDiterima++
+    else if (st === 'menunggu') triwulanMenunggu++
+    else if (st === 'perbaikan') triwulanPerbaikan++
+    else if (st === 'terlambat') triwulanTerlambat++
+
+    if (st !== 'belum_waktunya') triwulanDue++
+  }
+
+  const percentBulanan = bulananDue > 0 ? Math.round((bulananDiterima / bulananDue) * 100) : 0
+  const totalMenunggu = bulananMenunggu + triwulanMenunggu
+  const totalPerbaikan = bulananPerbaikan + triwulanPerbaikan
+  const totalTerlambat = bulananTerlambat + triwulanTerlambat
+
+  return {
+    bulananDiterima,
+    bulananMenunggu,
+    bulananPerbaikan,
+    bulananTerlambat,
+    bulananDue,
+    percentBulanan,
+    totalMenunggu,
+    totalPerbaikan,
+    totalTerlambat,
+  }
+})
+
+const bulananMeta = [
+  { key: 'jan', label: 'Januari 2026', tenggat: 'tenggat 10/02/2026' },
+  { key: 'feb', label: 'Februari 2026', tenggat: 'tenggat 10/03/2026' },
+  { key: 'mar', label: 'Maret 2026', tenggat: 'tenggat 10/04/2026' },
+  { key: 'apr', label: 'April 2026', tenggat: 'tenggat 10/05/2026' },
+  { key: 'mei', label: 'Mei 2026', tenggat: 'tenggat 10/06/2026' },
+  { key: 'jun', label: 'Juni 2026', tenggat: 'tenggat 10/07/2026' },
+  { key: 'jul', label: 'Juli 2026', tenggat: 'tenggat 10/08/2026' },
+  { key: 'agu', label: 'Agustus 2026', tenggat: 'tenggat 10/09/2026' },
+  { key: 'sep', label: 'September 2026', tenggat: 'tenggat 10/10/2026' },
+  { key: 'okt', label: 'Oktober 2026', tenggat: 'tenggat 10/11/2026' },
+  { key: 'nov', label: 'November 2026', tenggat: 'tenggat 10/12/2026' },
+  { key: 'des', label: 'Desember 2026', tenggat: 'tenggat 10/01/2027' },
+]
+
+const triwulanMeta = [
+  { key: 'tw1', label: 'Triwulan I 2026', tenggat: 'tenggat 10/04/2026', tw: 'TW 1', date: '10/04/2026' },
+  { key: 'tw2', label: 'Triwulan II 2026', tenggat: 'tenggat 10/07/2026', tw: 'TW 2', date: '10/07/2026' },
+  { key: 'tw3', label: 'Triwulan III 2026', tenggat: 'tenggat 10/10/2026', tw: 'TW 3', date: '10/10/2026' },
+  { key: 'tw4', label: 'Triwulan IV 2026', tenggat: 'tenggat 10/01/2027', tw: 'TW 4', date: '31/12/2026' },
+]
+
+// Dynamic Satker Triwulan Progress
+const satkerTriwulanProgress = computed(() => {
+  const row = operatorUnitRow.value
+  const twStatus = row.triwulanStatus || {}
+
+  return triwulanMeta.map((item) => {
+    const st = twStatus[item.key] || 'belum_waktunya'
+    let statusLabel = 'belum waktunya'
+    let percent = 0
+    let isGreen = false
+    let barColor = 'bg-slate-200'
+
+    if (st === 'diterima') {
+      statusLabel = 'Diterima'
+      percent = 100
+      isGreen = true
+      barColor = 'bg-emerald-500'
+    } else if (st === 'menunggu') {
+      statusLabel = 'Menunggu verifikasi'
+      percent = 70
+      isGreen = false
+      barColor = 'bg-amber-500'
+    } else if (st === 'perbaikan') {
+      statusLabel = 'Perlu perbaikan'
+      percent = 35
+      isGreen = false
+      barColor = 'bg-rose-500'
+    } else if (st === 'terlambat') {
+      statusLabel = 'Terlambat'
+      percent = 0
+      isGreen = false
+      barColor = 'bg-rose-400'
+    } else {
+      if (item.key === 'tw4') {
+        statusLabel = '61 hari lagi'
+        isGreen = true
+      } else {
+        statusLabel = 'belum waktunya'
+      }
+    }
+
+    return {
+      tw: item.tw,
+      date: item.date,
+      percent,
+      statusLabel,
+      isGreen,
+      barColor,
+    }
+  })
+})
+
+// Dynamic Satker Laporan yang perlu dikumpulkan
+const satkerLaporanList = computed(() => {
+  const row = operatorUnitRow.value
+  const list: {
+    status: 'Terlambat' | 'Segera' | 'Perlu Perbaikan'
+    title: string
+    tenggat: string
+  }[] = []
+
+  // Bulanan
+  for (const m of bulananMeta) {
+    const st = row.bulananStatus?.[m.key]
+    if (st === 'terlambat') {
+      list.push({
+        status: 'Terlambat',
+        title: `Laporan Bulanan — ${m.label}`,
+        tenggat: m.tenggat,
+      })
+    } else if (st === 'perbaikan') {
+      list.push({
+        status: 'Perlu Perbaikan',
+        title: `Laporan Bulanan — ${m.label}`,
+        tenggat: m.tenggat,
+      })
+    }
+  }
+
+  // Triwulan
+  for (const tw of triwulanMeta) {
+    const st = row.triwulanStatus?.[tw.key]
+    if (st === 'terlambat') {
+      list.push({
+        status: 'Terlambat',
+        title: `Laporan Triwulan — ${tw.label}`,
+        tenggat: tw.tenggat,
+      })
+    } else if (st === 'perbaikan') {
+      list.push({
+        status: 'Perlu Perbaikan',
+        title: `Laporan Triwulan — ${tw.label}`,
+        tenggat: tw.tenggat,
+      })
+    }
+  }
+
+  // Next upcoming month
+  const oktStatus = row.bulananStatus?.['okt']
+  if (oktStatus === 'belum_waktunya') {
+    list.push({
+      status: 'Segera',
+      title: 'Laporan Bulanan — Oktober 2026',
+      tenggat: 'tenggat 10/11/2026',
+    })
+  }
+
+  return list
+})
+
+// Submissions that need revision for this unit
+const operatorPerluPerbaikanList = computed(() => {
+  const code = targetUnitCode.value
   return dadukStore.submissions.value.filter(
     (s) => s.unitKode.toUpperCase() === code && s.status === 'Perlu Perbaikan',
-  ).length
+  )
 })
 
 const adminPendingSubmissions = computed(() =>
@@ -62,56 +258,6 @@ const userUnitFullName = computed(() => {
   }
   return user.value?.name || 'Satuan Kerja'
 })
-
-// ---------------------------------------------------------------------------
-// OPERATOR SATKER DATA & STATE
-// ---------------------------------------------------------------------------
-// Satker Triwulan Progress (TW 1 - TW 4)
-const satkerTriwulanProgress = ref([
-  { tw: 'TW 1', date: '-', percent: 0, statusLabel: 'belum ditetapkan', isGreen: false },
-  { tw: 'TW 2', date: '-', percent: 0, statusLabel: 'belum ditetapkan', isGreen: false },
-  { tw: 'TW 3', date: '-', percent: 0, statusLabel: 'belum ditetapkan', isGreen: false },
-  { tw: 'TW 4', date: '31/12/2026', percent: 0, statusLabel: '61 hari lagi', isGreen: true },
-])
-
-// Satker Laporan yang perlu dikumpulkan (Bounded scrollable container)
-const satkerLaporanList = ref([
-  {
-    status: 'Terlambat',
-    title: 'Laporan Bulanan — Juni 2026',
-    tenggat: 'tenggat 10/07/2026',
-  },
-  {
-    status: 'Terlambat',
-    title: 'Laporan Triwulan — TW II 2026',
-    tenggat: 'tenggat 10/07/2026',
-  },
-  {
-    status: 'Terlambat',
-    title: 'Laporan Bulanan — Juli 2026',
-    tenggat: 'tenggat 10/08/2026',
-  },
-  {
-    status: 'Terlambat',
-    title: 'Laporan Bulanan — Agustus 2026',
-    tenggat: 'tenggat 10/09/2026',
-  },
-  {
-    status: 'Terlambat',
-    title: 'Laporan Bulanan — September 2026',
-    tenggat: 'tenggat 10/10/2026',
-  },
-  {
-    status: 'Terlambat',
-    title: 'Laporan Triwulan — TW III 2026',
-    tenggat: 'tenggat 10/10/2026',
-  },
-  {
-    status: 'Segera',
-    title: 'Laporan Bulanan — Oktober 2026',
-    tenggat: 'tenggat 10/11/2026',
-  },
-])
 
 // Satker Capaian PK IKKs per unit
 const satkerIkksMap: Record<string, { id: string; indikator: string }[]> = {
@@ -475,9 +621,9 @@ onMounted(() => {
     <template v-if="isOperatorSatker">
       <!-- 1. Top 5 Metrics Cards for Satker -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
-        <!-- Card 1: Renaksi diterima TW 4 (Circular Gauge Donut) -->
+        <!-- Card 1: Laporan diterima (Circular Gauge Donut) -->
         <RouterLink
-          to="/sasaran-renaksi"
+          to="/laporan"
           class="bg-white rounded-2xl p-5 border-l-4 border-l-emerald-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
           <div class="w-14 h-14 relative flex items-center justify-center">
@@ -492,18 +638,20 @@ onMounted(() => {
               <path
                 class="text-emerald-500"
                 stroke-width="3.5"
-                stroke-dasharray="0, 100"
+                :stroke-dasharray="`${operatorMetrics.percentBulanan}, 100`"
                 stroke-linecap="round"
                 stroke="currentColor"
                 fill="none"
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
             </svg>
-            <span class="absolute text-xs font-black text-slate-800">0%</span>
+            <span class="absolute text-xs font-black text-slate-800">{{ operatorMetrics.percentBulanan }}%</span>
           </div>
           <div class="mt-3">
-            <span class="text-xs sm:text-sm font-bold text-slate-800 block">Renaksi diterima TW 4</span>
-            <span class="text-[11px] text-slate-400 font-normal block mt-0.5">0 dari 0</span>
+            <span class="text-xs sm:text-sm font-bold text-slate-800 block">Laporan diterima</span>
+            <span class="text-[11px] text-slate-400 font-normal block mt-0.5">
+              {{ operatorMetrics.bulananDiterima }} dari {{ operatorMetrics.bulananDue }} laporan
+            </span>
           </div>
         </RouterLink>
 
@@ -512,11 +660,11 @@ onMounted(() => {
           to="/laporan"
           class="bg-white rounded-2xl p-5 border-l-4 border-l-rose-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
-          <span class="text-3xl sm:text-4xl font-black text-rose-600">{{ operatorPerbaikanCount }}</span>
+          <span class="text-3xl sm:text-4xl font-black text-rose-600">{{ operatorMetrics.totalPerbaikan }}</span>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">Perlu diperbaiki</span>
             <span class="text-[11px] text-slate-400 font-normal block mt-0.5">
-              {{ operatorPerbaikanCount > 0 ? `${operatorPerbaikanCount} perlu revisi` : 'semua aman' }}
+              {{ operatorMetrics.totalPerbaikan > 0 ? `${operatorMetrics.totalPerbaikan} perlu revisi` : 'semua aman' }}
             </span>
           </div>
         </RouterLink>
@@ -526,7 +674,7 @@ onMounted(() => {
           to="/laporan"
           class="bg-white rounded-2xl p-5 border-l-4 border-l-amber-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
-          <span class="text-3xl sm:text-4xl font-black text-amber-500">{{ operatorMenungguCount }}</span>
+          <span class="text-3xl sm:text-4xl font-black text-amber-500">{{ operatorMetrics.totalMenunggu }}</span>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">Menunggu verifikasi</span>
             <span class="text-[11px] text-slate-400 font-normal block mt-0.5">daduk &amp; laporan</span>
@@ -538,10 +686,12 @@ onMounted(() => {
           to="/laporan"
           class="bg-white rounded-2xl p-5 border-l-4 border-l-rose-500 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
-          <span class="text-3xl sm:text-4xl font-black text-rose-600">7</span>
+          <span class="text-3xl sm:text-4xl font-black text-rose-600">{{ operatorMetrics.bulananTerlambat }}</span>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">Laporan perlu dikumpulkan</span>
-            <span class="text-[11px] text-slate-400 font-normal block mt-0.5">lewat tenggat / segera</span>
+            <span class="text-[11px] text-slate-400 font-normal block mt-0.5">
+              {{ operatorMetrics.bulananTerlambat }} laporan terlambat
+            </span>
           </div>
         </RouterLink>
 
@@ -593,7 +743,7 @@ onMounted(() => {
                 <div class="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden mx-2">
                   <div
                     class="h-full rounded-full transition-all duration-300"
-                    :class="item.percent > 0 ? 'bg-emerald-500' : 'bg-slate-200'"
+                    :class="item.barColor"
                     :style="{ width: item.percent + '%' }"
                   />
                 </div>
@@ -604,7 +754,11 @@ onMounted(() => {
                     class="px-2.5 py-0.5 rounded-full text-[11px]"
                     :class="item.isGreen
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50 font-semibold'
-                      : 'bg-slate-100 text-slate-500 font-medium'"
+                      : item.statusLabel === 'Terlambat'
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200/50 font-semibold'
+                        : item.statusLabel === 'Menunggu verifikasi'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200/50 font-semibold'
+                          : 'bg-slate-100 text-slate-500 font-medium'"
                   >
                     {{ item.statusLabel }}
                   </span>
@@ -636,17 +790,40 @@ onMounted(() => {
 
         <!-- Right Column: Perlu diperbaiki (lg:col-span-5) -->
         <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 sm:p-6 flex flex-col">
-          <div class="pb-3 border-b border-slate-100">
+          <div class="pb-3 border-b border-slate-100 flex items-center justify-between">
             <h2 class="text-base sm:text-lg font-bold text-[#0B2A6F]">
               Perlu diperbaiki
             </h2>
+            <span v-if="operatorPerluPerbaikanList.length > 0" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">
+              {{ operatorPerluPerbaikanList.length }} berkas
+            </span>
           </div>
-          <div class="pt-4">
-            <div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex items-center gap-2.5 text-xs text-emerald-800 font-medium">
+          <div class="pt-4 flex-1">
+            <div
+              v-if="operatorPerluPerbaikanList.length === 0"
+              class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex items-center gap-2.5 text-xs text-emerald-800 font-medium"
+            >
               <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
               <span>Tidak ada daduk yang perlu diperbaiki</span>
+            </div>
+            <div v-else class="space-y-2.5 max-h-[220px] overflow-y-auto scrollbar-thin">
+              <div
+                v-for="item in operatorPerluPerbaikanList"
+                :key="item.id"
+                class="p-3 rounded-xl bg-rose-50/70 border border-rose-200 text-xs text-rose-900 space-y-1.5"
+              >
+                <div class="flex items-center justify-between font-bold">
+                  <span>{{ item.jenisLaporan }} &bull; {{ item.periode }}</span>
+                  <RouterLink to="/laporan" class="text-rose-700 underline text-[11px] font-semibold hover:text-rose-900">
+                    Perbaiki &rarr;
+                  </RouterLink>
+                </div>
+                <p class="text-[11px] text-rose-700 italic">
+                  "{{ item.catatanVerifikator || 'Mohon perbaiki berkas laporan' }}"
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -655,9 +832,14 @@ onMounted(() => {
       <!-- 3. Laporan yang perlu dikumpulkan (Bounded container with smooth scrollbar) -->
       <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 sm:p-6 space-y-4">
         <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-          <h2 class="text-base sm:text-lg font-bold text-[#0B2A6F]">
-            Laporan yang perlu dikumpulkan
-          </h2>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base sm:text-lg font-bold text-[#0B2A6F]">
+              Laporan yang perlu dikumpulkan
+            </h2>
+            <span v-if="satkerLaporanList.length > 0" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">
+              {{ satkerLaporanList.length }} laporan
+            </span>
+          </div>
           <RouterLink
             to="/laporan"
             class="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors inline-flex items-center gap-1"
@@ -669,22 +851,30 @@ onMounted(() => {
 
         <!-- Scrollable Inner Container to Prevent Infinite Scroll -->
         <div class="max-h-[380px] overflow-y-auto pr-1.5 space-y-2.5 scrollbar-thin">
-          <div
+          <RouterLink
             v-for="rep in satkerLaporanList"
             :key="rep.title"
-            class="border border-slate-200/90 rounded-xl p-3.5 bg-white hover:border-slate-300 transition-colors"
+            to="/laporan"
+            class="block border border-slate-200/90 rounded-xl p-3.5 bg-white hover:border-slate-300 transition-colors group cursor-pointer"
           >
-            <div class="flex items-center gap-2">
-              <span
-                class="px-2 py-0.5 rounded text-[11px] font-bold"
-                :class="rep.status === 'Terlambat'
-                  ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
-                  : 'bg-blue-50 text-blue-700 border border-blue-200/60'"
-              >
-                {{ rep.status }}
-              </span>
-              <span class="text-xs text-slate-800 font-semibold">
-                {{ rep.title }}
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span
+                  class="px-2 py-0.5 rounded text-[11px] font-bold"
+                  :class="rep.status === 'Terlambat'
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
+                    : rep.status === 'Perlu Perbaikan'
+                      ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
+                      : 'bg-blue-50 text-blue-700 border border-blue-200/60'"
+                >
+                  {{ rep.status }}
+                </span>
+                <span class="text-xs text-slate-800 font-semibold group-hover:text-blue-600 transition-colors">
+                  {{ rep.title }}
+                </span>
+              </div>
+              <span class="text-[11px] text-blue-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                Unggah &rarr;
               </span>
             </div>
             <div
@@ -693,6 +883,16 @@ onMounted(() => {
             >
               {{ rep.tenggat }}
             </div>
+          </RouterLink>
+
+          <div
+            v-if="satkerLaporanList.length === 0"
+            class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2"
+          >
+            <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Semua laporan telah dikumpulkan. Tidak ada laporan yang terlambat!</span>
           </div>
         </div>
       </div>

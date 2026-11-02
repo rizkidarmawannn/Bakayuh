@@ -53,7 +53,7 @@ const initialUnitsData: LaporanUnitRow[] = [
       sep: 'terlambat', okt: 'belum_waktunya', nov: 'belum_waktunya', des: 'belum_waktunya',
     },
     triwulanStatus: {
-      tw1: 'terlambat', tw2: 'terlambat', tw3: 'menunggu', tw4: 'belum_waktunya',
+      tw1: 'terlambat', tw2: 'terlambat', tw3: 'terlambat', tw4: 'belum_waktunya',
     },
     kepatuhan: 0,
   },
@@ -222,7 +222,21 @@ function loadUnitsFromStorage(): LaporanUnitRow[] {
     const raw = localStorage.getItem(STORAGE_KEY_MATRIX)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Reconcile: If AHU tw3 was legacy mock 'menunggu' but no real user upload, set to terlambat
+        const ahu = parsed.find((u: LaporanUnitRow) => u.unitKode === 'AHU')
+        if (ahu && ahu.triwulanStatus?.tw3 === 'menunggu') {
+          const rawSubs = localStorage.getItem(STORAGE_KEY_SUBMISSIONS)
+          const subs = rawSubs ? JSON.parse(rawSubs) : []
+          const hasUserUpload = subs.some(
+            (s: DadukSubmission) => s.unitKode === 'AHU' && s.periodeKey === 'tw3' && s.id !== 'sub-2',
+          )
+          if (!hasUserUpload) {
+            ahu.triwulanStatus.tw3 = 'terlambat'
+          }
+        }
+        return parsed
+      }
     }
   } catch (e) {
     console.error('Failed to load matrix from localStorage:', e)
@@ -235,12 +249,15 @@ function loadSubmissionsFromStorage(): DadukSubmission[] {
     const raw = localStorage.getItem(STORAGE_KEY_SUBMISSIONS)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Clean up legacy mock sub-2 for AHU so AHU starts with a clean slate
+        return parsed.filter((s: DadukSubmission) => s.id !== 'sub-2')
+      }
     }
   } catch (e) {
     console.error('Failed to load submissions from localStorage:', e)
   }
-  return JSON.parse(JSON.stringify(initialSubmissions))
+  return JSON.parse(JSON.stringify(initialSubmissions.filter((s) => s.id !== 'sub-2')))
 }
 
 function saveMatrixToStorage() {
