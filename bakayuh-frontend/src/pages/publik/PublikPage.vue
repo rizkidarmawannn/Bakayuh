@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/composables/useApi'
 import type {
@@ -35,7 +35,8 @@ function normalizeTab(rawTab?: string): ActiveTab {
   if (rawTab === 'renaksi') return 'renaksi'
   if (rawTab === 'capaian_pk' || rawTab === 'iku' || rawTab === 'matriks') return 'iku'
   if (rawTab === 'laporan') return 'laporan'
-  if (rawTab === 'ikpa' || rawTab === 'sakip') return 'ikpa'
+  if (rawTab === 'ikpa') return 'ikpa'
+  if (rawTab === 'sakip') return 'sakip'
   return 'beranda'
 }
 
@@ -62,7 +63,7 @@ function setTab(tab: ActiveTab) {
       path: '/',
       query: {
         ...route.query,
-        tab: tab === 'iku' ? 'capaian_pk' : (tab === 'sakip' ? 'ikpa' : tab),
+        tab: tab === 'iku' ? 'capaian_pk' : tab,
       },
     })
   }
@@ -1004,59 +1005,218 @@ function getRenaksiStatusBadge(status?: string): { label: string; color: StatusC
 // ==========================================
 // 4. Tab: Evaluasi SAKIP
 // ==========================================
-const sakipLoading = ref(false)
-const sakipRows = ref<PerbandinganSakipRow[]>([])
-const sakipSearch = ref('')
+const publicSakipYear = ref(2026)
+const publicSakipYearOptions = [2026, 2025, 2024, 2023]
 
-const filteredSakipRows = computed(() => {
-  if (!sakipSearch.value.trim()) return sakipRows.value
-  const q = sakipSearch.value.toLowerCase()
-  return sakipRows.value.filter(
-    (row) =>
-      row.nama.toLowerCase().includes(q) ||
-      row.kode.toLowerCase().includes(q)
-  )
+const keteranganBobotSakip = [
+  {
+    predikat: 'AA',
+    rentang: '> 90 – 100',
+    kategori: 'Sangat Memuaskan',
+    interpretasi:
+      'Telah terwujud Good Governance. Seluruh kinerja dikelola dengan sangat memuaskan di seluruh unit kerja. Telah terbentuk pemerintah yang dinamis, adaptif, dan efisien (Reform). Pengukuran kinerja telah dilakukan sampai ke level individu.',
+  },
+  {
+    predikat: 'A',
+    rentang: '> 80 – 90',
+    kategori: 'Memuaskan',
+    interpretasi:
+      'Terdapat gambaran bahwa instansi pemerintah/unit kerja dapat memimpin perubahan dalam mewujudkan pemerintahan berorientasi hasil, karena pengukuran kinerja telah dilakukan sampai ke level eselon 4/Pengawas/Subkoordinator.',
+  },
+  {
+    predikat: 'BB',
+    rentang: '> 70 – 80',
+    kategori: 'Sangat Baik',
+    interpretasi:
+      'Terdapat gambaran bahwa AKIP sangat baik pada 2/3 unit kerja, baik itu unit kerja utama, maupun unit kerja pendukung. Akuntabilitas yang sangat baik ditandai dengan mulai terwujudnya efisiensi penggunaan anggaran dalam mencapai kinerja, memiliki sistem manajemen kinerja yang andal dan berbasis teknologi informasi, serta pengukuran kinerja telah dilakukan sampai ke level eselon 3/koordinator.',
+  },
+  {
+    predikat: 'B',
+    rentang: '> 60 – 70',
+    kategori: 'Baik',
+    interpretasi:
+      'Terdapat gambaran bahwa AKIP sudah baik pada 1/3 unit kerja, khususnya pada unit kerja utama. Terlihat masih perlu adanya sedikit perbaikan pada unit kerja, serta komitmen dalam manajemen kinerja. Pengukuran kinerja baru dilaksanakan sampai dengan level eselon 2/unit kerja.',
+  },
+  {
+    predikat: 'CC',
+    rentang: '> 50 – 60',
+    kategori: 'Cukup (Memadai)',
+    interpretasi:
+      'Terdapat gambaran bahwa AKIP cukup baik. Namun demikian, masih perlu banyak perbaikan walaupun tidak mendasar khususnya akuntabilitas kinerja pada unit kerja.',
+  },
+  {
+    predikat: 'C',
+    rentang: '> 30 – 50',
+    kategori: 'Kurang',
+    interpretasi:
+      'Sistem dan tatanan dalam AKIP kurang dapat diandalkan. Belum terimplementasi sistem manajemen kinerja sehingga masih perlu banyak perbaikan mendasar di level pusat.',
+  },
+  {
+    predikat: 'D',
+    rentang: '> 0 – 30',
+    kategori: 'Sangat Kurang',
+    interpretasi:
+      'Sistem dan tatanan dalam AKIP sama sekali tidak dapat diandalkan. Sama sekali belum terdapat penerapan manajemen kinerja sehingga masih perlu banyak perbaikan/perubahan yang sifatnya sangat mendasar, khususnya dalam implementasi SAKIP.',
+  },
+]
+
+const publicSakipSummary = ref({
+  scoreNum: 82.47,
+  scoreLabel: '82,47',
+  predikat: 'A',
+  kategori: 'Memuaskan',
+  interpretasi:
+    'Terdapat gambaran bahwa instansi pemerintah/unit kerja dapat memimpin perubahan dalam mewujudkan pemerintahan berorientasi hasil, karena pengukuran kinerja telah dilakukan sampai ke level eselon 4/Pengawas/Subkoordinator.',
+  sumberLabel: 'Nilai Akhir Itjen',
+  badgeClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+  totalMandiri: '90,57',
+  totalPembina: '86,97',
+  totalItjen: '82,47',
+  totalPanel: '-',
+  components: [
+    { id: 'perencanaan', name: 'PERENCANAAN', bobot: 30, score: 24.6, percent: 82, scoreLabel: '24,60', color: 'bg-indigo-500' },
+    { id: 'pengukuran', name: 'PENGUKURAN', bobot: 30, score: 26.1, percent: 87, scoreLabel: '26,10', color: 'bg-blue-600' },
+    { id: 'pelaporan', name: 'PELAPORAN', bobot: 15, score: 12.3, percent: 82, scoreLabel: '12,30', color: 'bg-emerald-500' },
+    { id: 'evaluasi', name: 'EVALUASI AKUNTABILITAS KINERJA INTERNAL', bobot: 25, score: 19.47, percent: 78, scoreLabel: '19,47', color: 'bg-purple-600' },
+  ],
+  tableRows: [
+    { id: 'perencanaan', name: 'PERENCANAAN', bobot: 30, mandiri: '30', pembina: '27', itjen: '24,6', panel: '-' },
+    { id: 'pengukuran', name: 'PENGUKURAN', bobot: 30, mandiri: '27,6', pembina: '27', itjen: '26,1', panel: '-' },
+    { id: 'pelaporan', name: 'PELAPORAN', bobot: 15, mandiri: '13,5', pembina: '13,5', itjen: '12,3', panel: '-' },
+    { id: 'evaluasi', name: 'EVALUASI AKUNTABILITAS KINERJA INTERNAL', bobot: 25, mandiri: '19,47', pembina: '19,47', itjen: '19,47', panel: '-' },
+  ],
 })
 
-const {
-  currentPage: sakipCurrentPage,
-  pageSize: sakipPageSize,
-  totalItems: sakipTotalItems,
-  paginatedItems: paginatedSakipRows,
-} = usePagination(filteredSakipRows, { defaultPageSize: 10 })
-
-async function fetchSakipData() {
-  sakipLoading.value = true
+function loadPublicSakipData() {
   try {
-    const params: Record<string, any> = {}
-    if (selectedTahunId.value) params.tahun_anggaran_id = selectedTahunId.value
+    const raw = localStorage.getItem('bakayuh_sakip_store_v1')
+    if (!raw) return
+    const parsed = JSON.parse(raw)
+    const yStr = String(publicSakipYear.value)
+    const dataYear = parsed?.database?.[yStr]
+    if (!dataYear) return
 
-    const res = await apiClient.get<{ data: PerbandinganSakipRow[] }>('/evaluasi-sakip/perbandingan', { params })
-    sakipRows.value = res.data.data
-  } catch (err) {
-    console.error('Failed to load SAKIP data:', err)
-  } finally {
-    sakipLoading.value = false
-  }
-}
+    const comps = parsed.components || [
+      { id: 'perencanaan', name: 'PERENCANAAN', bobot: 30 },
+      { id: 'pengukuran', name: 'PENGUKURAN', bobot: 30 },
+      { id: 'pelaporan', name: 'PELAPORAN', bobot: 15 },
+      { id: 'evaluasi', name: 'EVALUASI AKUNTABILITAS KINERJA INTERNAL', bobot: 25 },
+    ]
 
-function getPredikatBadge(predikat?: string | null): { label: string; color: StatusColor } {
-  if (!predikat) return { label: 'Belum Dievaluasi', color: 'gray' }
-  switch (predikat) {
-    case 'AA':
-      return { label: 'AA - Sangat Memuaskan', color: 'green' }
-    case 'A':
-      return { label: 'A - Memuaskan', color: 'green' }
-    case 'BB':
-      return { label: 'BB - Sangat Baik', color: 'blue' }
-    case 'B':
-      return { label: 'B - Baik', color: 'blue' }
-    case 'CC':
-      return { label: 'CC - Cukup', color: 'yellow' }
-    case 'C':
-      return { label: 'C - Kurang', color: 'red' }
-    default:
-      return { label: `${predikat} - Sangat Kurang`, color: 'red' }
+    function parseVal(v: any): number | null {
+      if (v === null || v === undefined) return null
+      const s = String(v).trim()
+      if (s === '' || s === '-') return null
+      const num = parseFloat(s.replace(',', '.'))
+      return isNaN(num) ? null : num
+    }
+
+    let sumItjen = 0
+    let sumPanel = 0
+    let sumPembina = 0
+    let sumMandiri = 0
+    let hasItjen = false
+    let hasPanel = false
+    let hasPembina = false
+    let hasMandiri = false
+
+    const defaultColors = ['bg-indigo-500', 'bg-blue-600', 'bg-emerald-500', 'bg-purple-600', 'bg-amber-500']
+    const compList: any[] = []
+    const rowsList: any[] = []
+
+    comps.forEach((c: any, idx: number) => {
+      const row = dataYear[c.id] || {}
+      const valPanel = parseVal(row.panel)
+      const valItjen = parseVal(row.itjen)
+      const valPembina = parseVal(row.pembina)
+      const valMandiri = parseVal(row.mandiri)
+
+      if (valPanel !== null) { hasPanel = true; sumPanel += valPanel }
+      if (valItjen !== null) { hasItjen = true; sumItjen += valItjen }
+      if (valPembina !== null) { hasPembina = true; sumPembina += valPembina }
+      if (valMandiri !== null) { hasMandiri = true; sumMandiri += valMandiri }
+
+      const actualScore = valPanel ?? valItjen ?? valPembina ?? valMandiri ?? 0
+      const bobot = Number(c.bobot) || 25
+      const pct = bobot > 0 ? Math.min(100, Math.round((actualScore / bobot) * 100)) : 0
+
+      let displayName = c.name
+      if (c.id === 'perencanaan') displayName = 'Perencanaan Kinerja'
+      else if (c.id === 'pengukuran') displayName = 'Pengukuran Kinerja'
+      else if (c.id === 'pelaporan') displayName = 'Pelaporan Kinerja'
+      else if (c.id === 'evaluasi') displayName = 'Evaluasi Internal'
+
+      compList.push({
+        id: c.id,
+        name: displayName,
+        bobot,
+        score: actualScore,
+        percent: pct,
+        scoreLabel: actualScore.toFixed(2).replace('.', ','),
+        color: defaultColors[idx % defaultColors.length] || 'bg-purple-600',
+      })
+
+      rowsList.push({
+        id: c.id,
+        name: c.name,
+        bobot,
+        mandiri: row.mandiri || '-',
+        pembina: row.pembina || '-',
+        itjen: row.itjen || '-',
+        panel: row.panel || '-',
+      })
+    })
+
+    let finalScore = 0
+    let sumber = 'Belum Dinilai'
+    if (hasPanel) { finalScore = sumPanel; sumber = 'Nilai Panel' }
+    else if (hasItjen) { finalScore = sumItjen; sumber = 'Nilai Itjen' }
+    else if (hasPembina) { finalScore = sumPembina; sumber = 'Nilai Pembina' }
+    else if (hasMandiri) { finalScore = sumMandiri; sumber = 'Nilai Mandiri' }
+
+    let predikat = 'D'
+    let kategori = 'Sangat Kurang'
+    let interpretasi = 'Sistem dan tatanan dalam AKIP sama sekali tidak dapat diandalkan.'
+    let badgeClass = 'bg-rose-100 text-rose-800 border border-rose-200'
+
+    const found = keteranganBobotSakip.find((item) => {
+      if (finalScore > 90) return item.predikat === 'AA'
+      if (finalScore > 80) return item.predikat === 'A'
+      if (finalScore > 70) return item.predikat === 'BB'
+      if (finalScore > 60) return item.predikat === 'B'
+      if (finalScore > 50) return item.predikat === 'CC'
+      if (finalScore > 30) return item.predikat === 'C'
+      return item.predikat === 'D'
+    })
+
+    if (found) {
+      predikat = found.predikat
+      kategori = found.kategori
+      interpretasi = found.interpretasi
+      if (predikat === 'AA' || predikat === 'A') badgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+      else if (predikat === 'BB') badgeClass = 'bg-blue-100 text-blue-800 border border-blue-200'
+      else if (predikat === 'B') badgeClass = 'bg-sky-100 text-sky-800 border border-sky-200'
+      else if (predikat === 'CC') badgeClass = 'bg-amber-100 text-amber-800 border border-amber-200'
+      else if (predikat === 'C') badgeClass = 'bg-orange-100 text-orange-800 border border-orange-200'
+    }
+
+    publicSakipSummary.value = {
+      scoreNum: finalScore,
+      scoreLabel: finalScore.toFixed(2).replace('.', ','),
+      predikat,
+      kategori,
+      interpretasi,
+      sumberLabel: sumber,
+      badgeClass,
+      totalMandiri: hasMandiri ? sumMandiri.toFixed(2).replace('.', ',') : '-',
+      totalPembina: hasPembina ? sumPembina.toFixed(2).replace('.', ',') : '-',
+      totalItjen: hasItjen ? sumItjen.toFixed(2).replace('.', ',') : '-',
+      totalPanel: hasPanel ? sumPanel.toFixed(2).replace('.', ',') : '-',
+      components: compList,
+      tableRows: rowsList,
+    }
+  } catch (e) {
+    console.error('Failed to load public SAKIP data:', e)
   }
 }
 
@@ -1067,7 +1227,7 @@ watch(
     if (tab === 'iku' && ikuTargets.value.length === 0) fetchIkuData()
     if (tab === 'matriks' && matriksRows.value.length === 0) fetchMatriksData()
     if (tab === 'renaksi' && renaksiList.value.length === 0) fetchRenaksiData()
-    if (tab === 'sakip' && sakipRows.value.length === 0) fetchSakipData()
+    if (tab === 'sakip') loadPublicSakipData()
   },
   { immediate: true }
 )
@@ -1079,16 +1239,22 @@ watch(
     if (activeTab.value === 'iku') fetchIkuData()
     else if (activeTab.value === 'matriks') fetchMatriksData()
     else if (activeTab.value === 'renaksi') fetchRenaksiData()
-    else if (activeTab.value === 'sakip') fetchSakipData()
+    else if (activeTab.value === 'sakip') loadPublicSakipData()
   }
 )
 
 onMounted(async () => {
   await fetchMetadata()
+  loadPublicSakipData()
+  window.addEventListener('storage', loadPublicSakipData)
   if (activeTab.value === 'iku') fetchIkuData()
   else if (activeTab.value === 'matriks') fetchMatriksData()
   else if (activeTab.value === 'renaksi') fetchRenaksiData()
-  else if (activeTab.value === 'sakip') fetchSakipData()
+  else if (activeTab.value === 'sakip') loadPublicSakipData()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('storage', loadPublicSakipData)
 })
 </script>
 
@@ -1163,26 +1329,26 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- 4 Horizontal Metric Summary Cards Floating Across Hero -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8 pt-2 relative z-10">
+      <!-- 5 Horizontal Metric Summary Cards Floating Across Hero -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 mt-8 pt-2 relative z-10">
         <!-- 1. Renaksi diterima -->
         <div
           role="button"
           tabindex="0"
           @click="setTab('renaksi')"
-          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-4 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
         >
-          <div class="relative w-14 h-14 flex-shrink-0 flex items-center justify-center">
-            <svg class="w-14 h-14 -rotate-90" viewBox="0 0 48 48">
+          <div class="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 flex items-center justify-center">
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
               <circle cx="24" cy="24" r="19" stroke="#E2E8F0" stroke-width="4.5" fill="none" />
             </svg>
             <span class="absolute inset-0 flex items-center justify-center font-bold text-xs text-slate-800">0%</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-sm sm:text-base leading-snug group-hover:text-blue-600 transition-colors">
+            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors truncate">
               Renaksi diterima
             </span>
-            <span class="text-xs text-slate-500 mt-0.5">TW 4 &bull; 0 dari 0</span>
+            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">TW 4 &bull; 0 dari 0</span>
           </div>
         </div>
 
@@ -1191,10 +1357,10 @@ onMounted(async () => {
           role="button"
           tabindex="0"
           @click="setTab('iku')"
-          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-4 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
         >
-          <div class="relative w-14 h-14 flex-shrink-0 flex items-center justify-center">
-            <svg class="w-14 h-14 -rotate-90" viewBox="0 0 48 48">
+          <div class="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 flex items-center justify-center">
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
               <circle cx="24" cy="24" r="19" stroke="#E2E8F0" stroke-width="4.5" fill="none" />
               <circle
                 cx="24" cy="24" r="19"
@@ -1209,49 +1375,72 @@ onMounted(async () => {
             <span class="absolute inset-0 flex items-center justify-center font-bold text-xs text-slate-800">14%</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-sm sm:text-base leading-snug group-hover:text-blue-600 transition-colors">
+            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors truncate">
               Capaian PK terisi
             </span>
-            <span class="text-xs text-slate-500 mt-0.5">2 dari 14 indikator (2026)</span>
+            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">2 dari 14 (2026)</span>
           </div>
         </div>
 
-        <!-- 3. Nilai IKPA -->
-        <div
-          role="button"
-          tabindex="0"
-          @click="setTab('sakip')"
-          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-4 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
-        >
-          <div class="flex-shrink-0 flex items-center justify-center">
-            <span class="text-2xl sm:text-3xl font-black text-[#0B2A6F] tracking-tight">96,49</span>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-sm sm:text-base leading-snug group-hover:text-blue-600 transition-colors">
-              Nilai IKPA
-            </span>
-            <span class="text-xs text-slate-500 mt-0.5">rata-rata September 2026</span>
-          </div>
-        </div>
-
-        <!-- 4. Laporan diterima -->
+        <!-- 3. Laporan diterima -->
         <div
           role="button"
           tabindex="0"
           @click="setTab('laporan')"
-          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-4 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
         >
-          <div class="relative w-14 h-14 flex-shrink-0 flex items-center justify-center">
-            <svg class="w-14 h-14 -rotate-90" viewBox="0 0 48 48">
+          <div class="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 flex items-center justify-center">
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
               <circle cx="24" cy="24" r="19" stroke="#E2E8F0" stroke-width="4.5" fill="none" />
             </svg>
             <span class="absolute inset-0 flex items-center justify-center font-bold text-xs text-slate-800">0%</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-sm sm:text-base leading-snug group-hover:text-blue-600 transition-colors">
+            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors truncate">
               Laporan diterima
             </span>
-            <span class="text-xs text-slate-500 mt-0.5">0 dari 72 jatuh tempo (2026)</span>
+            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">0 dari 72 (2026)</span>
+          </div>
+        </div>
+
+        <!-- 4. Nilai IKPA -->
+        <div
+          role="button"
+          tabindex="0"
+          @click="setTab('ikpa')"
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100 flex items-center gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+        >
+          <div class="flex-shrink-0 flex items-center justify-center">
+            <span class="text-2xl sm:text-3xl font-black text-[#0B2A6F] tracking-tight">96,49</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors truncate">
+              Nilai IKPA
+            </span>
+            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">rata-rata Sep 2026</span>
+          </div>
+        </div>
+
+        <!-- 5. Nilai SAKIP -->
+        <div
+          role="button"
+          tabindex="0"
+          @click="setTab('sakip')"
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-purple-100 flex items-center gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none col-span-2 sm:col-span-1 group"
+        >
+          <div class="flex-shrink-0 flex items-center justify-center">
+            <span class="text-2xl sm:text-3xl font-black text-[#0B2A6F] tracking-tight">{{ publicSakipSummary.scoreLabel }}</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-purple-600 transition-colors truncate">
+                Nilai SAKIP
+              </span>
+              <span class="px-1.5 py-0.2 rounded font-bold text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200">
+                {{ publicSakipSummary.predikat }}
+              </span>
+            </div>
+            <span class="text-[11px] sm:text-xs text-purple-700 font-medium mt-0.5 truncate">{{ publicSakipSummary.kategori }} &bull; {{ publicSakipYear }}</span>
           </div>
         </div>
       </div>
@@ -1614,6 +1803,90 @@ onMounted(async () => {
         <p class="text-xs text-slate-500 mt-6 pt-3 border-t border-slate-100">
           Dihitung dari laporan yang sudah jatuh tempo atau sudah dikirim.
         </p>
+      </div>
+
+      <!-- Row 4: Full Width SAKIP 2026 — Akuntabilitas Kinerja -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-4 rounded-full bg-purple-600" />
+            <h3 class="text-base sm:text-lg font-bold text-[#0B2A6F]">
+              SAKIP 2026 &mdash; Akuntabilitas Kinerja
+            </h3>
+            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+              PermenPAN-RB No. 88/2021
+            </span>
+          </div>
+          <button
+            type="button"
+            @click="setTab('sakip')"
+            class="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-800 transition-colors inline-flex items-center gap-1 cursor-pointer"
+          >
+            <span>Lihat detail</span>
+            <span>&rarr;</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          <!-- Left: Nilai & Predikat -->
+          <div class="md:col-span-4 flex flex-col items-center justify-center p-5 rounded-2xl bg-gradient-to-b from-purple-50/60 to-slate-50/40 border border-purple-100 text-center">
+            <span class="text-xs font-semibold text-purple-700 uppercase tracking-wider mb-1">
+              Nilai Akhir SAKIP ({{ publicSakipSummary.sumberLabel }})
+            </span>
+            <div class="flex items-center justify-center gap-3 my-1">
+              <span class="text-4xl sm:text-5xl font-black text-[#0B2A6F] font-mono tracking-tight">
+                {{ publicSakipSummary.scoreLabel }}
+              </span>
+              <span
+                class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-lg font-black font-mono shadow-xs"
+                :class="publicSakipSummary.badgeClass"
+              >
+                {{ publicSakipSummary.predikat }}
+              </span>
+            </div>
+            <span class="text-sm font-bold text-slate-800 mt-1">
+              Predikat {{ publicSakipSummary.predikat }} &mdash; {{ publicSakipSummary.kategori }}
+            </span>
+            <p class="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed line-clamp-3">
+              {{ publicSakipSummary.interpretasi }}
+            </p>
+          </div>
+
+          <!-- Right: 4 Components Bars -->
+          <div class="md:col-span-8 space-y-3.5">
+            <div
+              v-for="comp in publicSakipSummary.components"
+              :key="comp.name"
+              class="bg-slate-50/70 border border-slate-100 rounded-xl p-3 sm:p-3.5"
+            >
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs sm:text-sm font-bold text-slate-800">
+                    {{ comp.name }}
+                  </span>
+                  <span class="text-[11px] font-medium text-slate-400">
+                    (Bobot {{ comp.bobot }}%)
+                  </span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-mono font-bold text-[#0B2A6F]">
+                    {{ comp.scoreLabel }} / {{ comp.bobot }}
+                  </span>
+                  <span class="text-[11px] font-mono font-semibold text-slate-500 w-9 text-right">
+                    {{ comp.percent }}%
+                  </span>
+                </div>
+              </div>
+              <div class="w-full h-2.5 rounded-full bg-slate-200/80 overflow-hidden">
+                <div
+                  class="h-full rounded-full transition-all duration-500"
+                  :class="comp.color"
+                  :style="{ width: comp.percent + '%' }"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2451,7 +2724,7 @@ onMounted(async () => {
       </div>
 
       <!-- TAB CONTENT: 5. IKPA (Matches Image 2) -->
-      <div v-else-if="activeTab === 'ikpa' || activeTab === 'sakip'" class="space-y-6 animate-fade-in">
+      <div v-else-if="activeTab === 'ikpa'" class="space-y-6 animate-fade-in">
         <!-- Header with Title & Period Filter -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -2616,6 +2889,211 @@ onMounted(async () => {
           <div class="flex items-center gap-2">
             <span class="w-3.5 h-3.5 rounded-xs border border-slate-300 bg-[#FEF08A] inline-block" />
             <span>Belum Memenuhi Target (kurang dari 96)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT: 6. SAKIP (Sistem Akuntabilitas Kinerja Instansi Pemerintah) -->
+      <div v-else-if="activeTab === 'sakip'" class="space-y-6 animate-fade-in">
+        <!-- Header with Title & Year Filter -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-black text-[#0B2A6F] tracking-tight">
+              Sistem Akuntabilitas Kinerja Instansi Pemerintah (SAKIP)
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+              Evaluasi Akuntabilitas Kinerja Kanwil Kementerian Hukum Kalimantan Selatan Tahun {{ publicSakipYear }}
+            </p>
+          </div>
+          <div class="self-start sm:self-auto flex items-center gap-2">
+            <select
+              v-model="publicSakipYear"
+              @change="loadPublicSakipData"
+              class="border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs sm:text-sm font-semibold bg-white text-slate-700 shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option v-for="y in publicSakipYearOptions" :key="y" :value="y">Tahun {{ y }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Main Card 1: SAKIP Values Table -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-7 shadow-xs">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-5 gap-2">
+            <div>
+              <h3 class="text-sm sm:text-base font-extrabold text-[#091F4A] tracking-wider uppercase">
+                KANWIL KEMENTERIAN HUKUM KALIMANTAN SELATAN &middot; {{ publicSakipYear }}
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Evaluasi komponen akuntabilitas kinerja instansi pemerintah
+              </p>
+            </div>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 self-start sm:self-auto">
+              PermenPAN-RB No. 88/2021
+            </span>
+          </div>
+
+          <!-- Table Container -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-center border-collapse">
+                <thead>
+                  <tr class="bg-[#091F4A] text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider">
+                    <th class="py-3.5 px-3 text-center border-r border-white/20 w-14">
+                      No
+                    </th>
+                    <th class="py-3.5 px-4 text-left border-r border-white/20 min-w-[200px]">
+                      Komponen
+                    </th>
+                    <th class="py-3.5 px-3 text-center border-r border-white/20 w-24">
+                      Bobot
+                    </th>
+                    <th class="py-3.5 px-3 text-center border-r border-white/20 w-32 sm:w-36">
+                      Nilai Mandiri
+                    </th>
+                    <th class="py-3.5 px-3 text-center border-r border-white/20 w-32 sm:w-36">
+                      Nilai Pembina
+                    </th>
+                    <th class="py-3.5 px-3 text-center border-r border-white/20 w-32 sm:w-36">
+                      Nilai Itjen
+                    </th>
+                    <th class="py-3.5 px-3 text-center w-32 sm:w-36">
+                      Nilai Panel
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(item, idx) in publicSakipSummary.tableRows"
+                    :key="item.id"
+                    class="border-b border-slate-200 hover:bg-slate-50/50 transition-colors"
+                  >
+                    <!-- No -->
+                    <td class="py-3.5 px-3 text-center border-r border-slate-200 text-slate-700 text-xs sm:text-sm font-medium">
+                      {{ idx + 1 }}
+                    </td>
+                    <!-- Komponen -->
+                    <td class="py-3.5 px-4 text-left border-r border-slate-200 font-bold text-xs sm:text-sm text-[#0B2A6F] tracking-wide">
+                      {{ item.name }}
+                    </td>
+                    <!-- Bobot -->
+                    <td class="py-3.5 px-3 text-center border-r border-slate-200 font-mono text-xs sm:text-sm font-semibold text-slate-600">
+                      {{ item.bobot }}%
+                    </td>
+                    <!-- Mandiri -->
+                    <td class="py-3.5 px-3 text-center border-r border-slate-200 font-mono text-xs sm:text-sm font-semibold text-slate-800">
+                      {{ item.mandiri }}
+                    </td>
+                    <!-- Pembina -->
+                    <td class="py-3.5 px-3 text-center border-r border-slate-200 font-mono text-xs sm:text-sm font-semibold text-slate-800">
+                      {{ item.pembina }}
+                    </td>
+                    <!-- Itjen -->
+                    <td class="py-3.5 px-3 text-center border-r border-slate-200 font-mono text-xs sm:text-sm font-bold text-blue-700 bg-blue-50/30">
+                      {{ item.itjen }}
+                    </td>
+                    <!-- Panel -->
+                    <td class="py-3.5 px-3 text-center font-mono text-xs sm:text-sm font-semibold text-slate-800">
+                      {{ item.panel }}
+                    </td>
+                  </tr>
+
+                  <!-- Total Row -->
+                  <tr class="bg-slate-50/80 font-bold">
+                    <td colspan="2" class="py-4 px-6 text-right border-r border-slate-200 font-bold text-xs sm:text-sm text-slate-800">
+                      Total Nilai
+                    </td>
+                    <td class="py-4 px-3 text-center border-r border-slate-200 font-mono font-bold text-xs sm:text-sm text-slate-700">
+                      100%
+                    </td>
+                    <td class="py-4 px-3 text-center border-r border-slate-200 font-extrabold text-sm sm:text-base text-emerald-600 font-mono">
+                      {{ publicSakipSummary.totalMandiri }}
+                    </td>
+                    <td class="py-4 px-3 text-center border-r border-slate-200 font-extrabold text-sm sm:text-base text-emerald-600 font-mono">
+                      {{ publicSakipSummary.totalPembina }}
+                    </td>
+                    <td class="py-4 px-3 text-center border-r border-slate-200 font-extrabold text-sm sm:text-base text-blue-700 font-mono bg-blue-50/40">
+                      {{ publicSakipSummary.totalItjen }}
+                    </td>
+                    <td class="py-4 px-3 text-center font-extrabold text-sm sm:text-base text-emerald-600 font-mono">
+                      {{ publicSakipSummary.totalPanel }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Nilai Akhir Card Highlight -->
+          <div class="mt-6 p-5 rounded-2xl bg-gradient-to-r from-purple-50/80 via-blue-50/40 to-slate-50 border border-purple-100 flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div class="space-y-1">
+              <span class="text-xs font-semibold text-purple-700 uppercase tracking-wider block">
+                Hasil Evaluasi Akhir SAKIP ({{ publicSakipSummary.sumberLabel }})
+              </span>
+              <h4 class="text-base sm:text-lg font-black text-[#0B2A6F]">
+                Predikat {{ publicSakipSummary.predikat }} &mdash; {{ publicSakipSummary.kategori }}
+              </h4>
+              <p class="text-xs text-slate-600 max-w-2xl leading-relaxed">
+                {{ publicSakipSummary.interpretasi }}
+              </p>
+            </div>
+            <div class="flex items-center gap-3 self-center sm:self-auto flex-shrink-0">
+              <div class="text-center bg-white px-5 py-3 rounded-xl border border-purple-200 shadow-2xs">
+                <span class="text-xs text-slate-500 font-medium block">Nilai SAKIP</span>
+                <span class="text-3xl font-black text-[#0B2A6F] font-mono">{{ publicSakipSummary.scoreLabel }}</span>
+              </div>
+              <div class="text-center px-4 py-3 rounded-xl border shadow-2xs flex flex-col items-center justify-center min-w-[70px]" :class="publicSakipSummary.badgeClass">
+                <span class="text-[10px] uppercase font-bold tracking-wider">Predikat</span>
+                <span class="text-2xl font-black font-mono leading-tight">{{ publicSakipSummary.predikat }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Card 2: Keterangan Predikat & Interpretasi PermenPAN-RB No. 88 Tahun 2021 -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-7 shadow-xs">
+          <div class="pb-4 border-b border-slate-100 mb-5">
+            <h3 class="text-sm sm:text-base font-extrabold text-[#091F4A] tracking-wider uppercase">
+              Keterangan Predikat &amp; Interpretasi SAKIP
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Standar Evaluasi Akuntabilitas Kinerja berdasarkan Peraturan Menteri Pendayagunaan Aparatur Negara dan Reformasi Birokrasi (PermenPAN-RB) No. 88 Tahun 2021
+            </p>
+          </div>
+
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                <thead>
+                  <tr class="bg-slate-100/90 border-b border-slate-200 text-slate-800 text-[11px] sm:text-xs font-bold uppercase tracking-wider">
+                    <th class="py-3 px-4 border-r border-slate-200 w-28 text-center">Predikat</th>
+                    <th class="py-3 px-4 border-r border-slate-200 w-36 text-center">Rentang Nilai</th>
+                    <th class="py-3 px-4 border-r border-slate-200 w-44">Kategori</th>
+                    <th class="py-3 px-4">Interpretasi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr
+                    v-for="item in keteranganBobotSakip"
+                    :key="item.predikat"
+                    :class="item.predikat === publicSakipSummary.predikat ? 'bg-purple-50/50 font-medium' : 'hover:bg-slate-50/50'"
+                    class="transition-colors"
+                  >
+                    <td class="py-3.5 px-4 border-r border-slate-200 text-center font-black font-mono" :class="item.predikat === publicSakipSummary.predikat ? 'text-purple-800 text-base' : 'text-[#0B2A6F]'">
+                      {{ item.predikat }}
+                    </td>
+                    <td class="py-3.5 px-4 border-r border-slate-200 text-center font-mono text-xs text-slate-700">
+                      {{ item.rentang }}
+                    </td>
+                    <td class="py-3.5 px-4 border-r border-slate-200 font-bold" :class="item.predikat === publicSakipSummary.predikat ? 'text-purple-900' : 'text-slate-800'">
+                      {{ item.kategori }}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-slate-600 leading-relaxed">
+                      {{ item.interpretasi }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

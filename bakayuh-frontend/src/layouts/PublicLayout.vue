@@ -13,6 +13,7 @@ const navItems = [
   { name: 'capaian_pk', label: 'Capaian PK', to: { path: '/', query: { tab: 'capaian_pk' } } },
   { name: 'laporan', label: 'Laporan', to: { path: '/', query: { tab: 'laporan' } } },
   { name: 'ikpa', label: 'IKPA', to: { path: '/', query: { tab: 'ikpa' } } },
+  { name: 'sakip', label: 'SAKIP', to: { path: '/', query: { tab: 'sakip' } } },
 ]
 
 function isNavActive(itemName: string): boolean {
@@ -33,7 +34,10 @@ function isNavActive(itemName: string): boolean {
     return currentTab === 'laporan'
   }
   if (itemName === 'ikpa') {
-    return currentTab === 'ikpa' || currentTab === 'sakip'
+    return currentTab === 'ikpa'
+  }
+  if (itemName === 'sakip') {
+    return currentTab === 'sakip'
   }
   return false
 }
