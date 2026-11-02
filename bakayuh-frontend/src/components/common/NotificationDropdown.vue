@@ -160,8 +160,7 @@ const roleBadgeLabel = computed(() => {
       <img
         :src="bellIconUrl"
         alt="Notifikasi"
-        class="w-6 h-6 object-contain transition-transform duration-200 drop-shadow select-none"
-        :class="{ 'rotate-12 scale-105': unreadCount > 0 }"
+        class="w-6 h-6 object-contain drop-shadow select-none transition-transform duration-150"
       />
 
       <!-- Unread Badge Indicator -->
