@@ -136,47 +136,63 @@ const totalPanel = computed(() => {
 })
 
 
-// Keterangan Bobot Nilai (Image 2)
-const keteranganBobot = [
+// Keterangan Predikat & Interpretasi SAKIP (PermenPAN-RB No. 88 Tahun 2021)
+interface KeteranganPredikatItem {
+  predikat: string
+  rentang: string
+  kategori: string
+  interpretasi: string
+}
+
+const keteranganBobot: KeteranganPredikatItem[] = [
   {
     predikat: 'AA',
-    bobot: 100,
-    keterangan: 'Jika kualitas seluruh kriteria telah terpenuhi (100%) dan terdapat upaya inovatif serta layak menjadi percontohan secara nasional.',
+    rentang: '> 90 – 100',
+    kategori: 'Sangat Memuaskan',
+    interpretasi:
+      'Telah terwujud Good Governance. Seluruh kinerja dikelola dengan sangat memuaskan di seluruh unit kerja. Telah terbentuk pemerintah yang dinamis, adaptif, dan efisien (Reform). Pengukuran kinerja telah dilakukan sampai ke level individu.',
   },
   {
     predikat: 'A',
-    bobot: 90,
-    keterangan: 'Jika kualitas seluruh kriteria telah terpenuhi (100%) dan terdapat beberapa upaya yang bisa dihargai dari pemenuhan kriteria tersebut.',
+    rentang: '> 80 – 90',
+    kategori: 'Memuaskan',
+    interpretasi:
+      'Terdapat gambaran bahwa instansi pemerintah/unit kerja dapat memimpin perubahan dalam mewujudkan pemerintahan berorientasi hasil, karena pengukuran kinerja telah dilakukan sampai ke level eselon 4/Pengawas/Subkoordinator.',
   },
   {
     predikat: 'BB',
-    bobot: 80,
-    keterangan: 'Jika kualitas seluruh kriteria telah terpenuhi (100%) sesuai dengan mandat kebijakan.',
+    rentang: '> 70 – 80',
+    kategori: 'Sangat Baik',
+    interpretasi:
+      'Terdapat gambaran bahwa AKIP sangat baik pada 2/3 unit kerja, baik itu unit kerja utama, maupun unit kerja pendukung. Akuntabilitas yang sangat baik ditandai dengan mulai terwujudnya efisiensi penggunaan anggaran dalam mencapai kinerja, memiliki sistem manajemen kinerja yang andal dan berbasis teknologi informasi, serta pengukuran kinerja telah dilakukan sampai ke level eselon 3/koordinator.',
   },
   {
     predikat: 'B',
-    bobot: 70,
-    keterangan: 'Jika kualitas sebagian besar kriteria telah terpenuhi (>75%-100%).',
+    rentang: '> 60 – 70',
+    kategori: 'Baik',
+    interpretasi:
+      'Terdapat gambaran bahwa AKIP sudah baik pada 1/3 unit kerja, khususnya pada unit kerja utama. Terlihat masih perlu adanya sedikit perbaikan pada unit kerja, serta komitmen dalam manajemen kinerja. Pengukuran kinerja baru dilaksanakan sampai dengan level eselon 2/unit kerja.',
   },
   {
     predikat: 'CC',
-    bobot: 60,
-    keterangan: 'Jika kualitas sebagian besar kriteria telah terpenuhi (>50%-75%).',
+    rentang: '> 50 – 60',
+    kategori: 'Cukup (Memadai)',
+    interpretasi:
+      'Terdapat gambaran bahwa AKIP cukup baik. Namun demikian, masih perlu banyak perbaikan walaupun tidak mendasar khususnya akuntabilitas kinerja pada unit kerja.',
   },
   {
     predikat: 'C',
-    bobot: 50,
-    keterangan: 'Jika kualitas sebagian kecil kriteria telah terpenuhi (>25%-50%).',
+    rentang: '> 30 – 50',
+    kategori: 'Kurang',
+    interpretasi:
+      'Sistem dan tatanan dalam AKIP kurang dapat diandalkan. Belum terimplementasi sistem manajemen kinerja sehingga masih perlu banyak perbaikan mendasar di level pusat.',
   },
   {
     predikat: 'D',
-    bobot: 30,
-    keterangan: 'Jika kriteria penilaian akuntabilitas kinerja telah mulai dipenuhi (>0%-25%).',
-  },
-  {
-    predikat: 'E',
-    bobot: 0,
-    keterangan: 'Jika sama sekali tidak ada upaya dalam pemenuhan kriteria penilaian akuntabilitas kinerja.',
+    rentang: '> 0 – 30',
+    kategori: 'Sangat Kurang',
+    interpretasi:
+      'Sistem dan tatanan dalam AKIP sama sekali tidak dapat diandalkan. Sama sekali belum terdapat penerapan manajemen kinerja sehingga masih perlu banyak perbaikan/perubahan yang sifatnya sangat mendasar, khususnya dalam implementasi SAKIP.',
   },
 ]
 
@@ -192,15 +208,20 @@ const nilaiAkhirSakip = computed(() => {
 const predikatNilaiAkhir = computed<string | null>(() => {
   const num = parseVal(nilaiAkhirSakip.value)
   if (num === null) return null
-  const match = keteranganBobot.find((item) => num >= item.bobot)
-  return match ? match.predikat : 'E'
+  if (num > 90) return 'AA'
+  if (num > 80) return 'A'
+  if (num > 70) return 'BB'
+  if (num > 60) return 'B'
+  if (num > 50) return 'CC'
+  if (num > 30) return 'C'
+  return 'D'
 })
 
 const keteranganNilaiAkhir = computed<string>(() => {
-  const num = parseVal(nilaiAkhirSakip.value)
-  if (num === null) return ''
-  const match = keteranganBobot.find((item) => num >= item.bobot)
-  return match ? `${match.predikat} (Bobot ${match.bobot}): ${match.keterangan}` : ''
+  const p = predikatNilaiAkhir.value
+  if (!p) return ''
+  const item = keteranganBobot.find((x) => x.predikat === p)
+  return item ? `${item.predikat} (${item.kategori} - Nilai ${item.rentang}): ${item.interpretasi}` : ''
 })
 
 const sumberNilaiAkhir = computed(() => {
@@ -534,30 +555,66 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Main Card 2: Keterangan bobot nilai (Matches Image 2) -->
+    <!-- Main Card 2: Keterangan Predikat & Interpretasi (PermenPAN-RB No. 88 Tahun 2021) -->
     <div class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-7 shadow-xs">
-      <h3 class="text-sm sm:text-base font-extrabold text-[#091F4A] tracking-wider mb-4">
-        Keterangan bobot nilai
-      </h3>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-4">
+        <h3 class="text-sm sm:text-base font-extrabold text-[#091F4A] tracking-wider">
+          Keterangan Predikat &amp; Interpretasi SAKIP
+        </h3>
+        <span class="text-xs text-slate-500 font-medium">
+          Standar Evaluasi PermenPAN-RB No. 88 Tahun 2021
+        </span>
+      </div>
       <div class="border border-slate-200 rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-slate-800 text-xs font-bold uppercase tracking-wider">
+                <th class="py-3 px-4 sm:px-5 w-48 sm:w-56 border-r border-slate-200 text-center sm:text-left">
+                  Predikat
+                </th>
+                <th class="py-3 px-4 sm:px-5">
+                  Interpretasi
+                </th>
+              </tr>
+            </thead>
             <tbody>
               <tr
                 v-for="(row, idx) in keteranganBobot"
                 :key="idx"
                 class="border-b last:border-b-0 border-slate-200 hover:bg-slate-50/50 transition-colors"
-                :class="row.predikat === predikatNilaiAkhir ? 'bg-blue-50/80 font-semibold' : ''"
+                :class="row.predikat === predikatNilaiAkhir ? 'bg-blue-50/80' : ''"
               >
-                <td class="py-3.5 px-4 sm:px-5 font-semibold text-slate-800 w-48 sm:w-60 border-r border-slate-200 align-middle whitespace-nowrap">
-                  <span
-                    v-if="row.predikat === predikatNilaiAkhir"
-                    class="inline-block w-2 h-2 rounded-full bg-[#1D4ED8] mr-2"
-                  ></span>
-                  {{ row.predikat }} (Bobot nilai {{ row.bobot }})
+                <td class="py-3.5 px-4 sm:px-5 border-r border-slate-200 align-top whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <span
+                      v-if="row.predikat === predikatNilaiAkhir"
+                      class="inline-block w-2.5 h-2.5 rounded-full bg-[#1D4ED8] shrink-0"
+                    ></span>
+                    <span
+                      class="text-base sm:text-lg font-black tracking-tight"
+                      :class="row.predikat === predikatNilaiAkhir ? 'text-[#1D4ED8]' : 'text-slate-900'"
+                    >
+                      {{ row.predikat }}
+                    </span>
+                  </div>
+                  <span class="text-xs text-slate-500 font-semibold block mt-0.5">
+                    (Nilai {{ row.rentang }})
+                  </span>
                 </td>
-                <td class="py-3.5 px-4 sm:px-5 text-slate-600 align-middle leading-relaxed" :class="row.predikat === predikatNilaiAkhir ? 'text-slate-800 font-medium' : ''">
-                  {{ row.keterangan }}
+                <td class="py-3.5 px-4 sm:px-5 text-slate-700 align-top leading-relaxed">
+                  <span
+                    class="font-bold text-sm block mb-1"
+                    :class="row.predikat === predikatNilaiAkhir ? 'text-[#091F4A]' : 'text-slate-900'"
+                  >
+                    {{ row.kategori }}
+                  </span>
+                  <p
+                    class="text-xs sm:text-sm leading-relaxed"
+                    :class="row.predikat === predikatNilaiAkhir ? 'text-slate-800 font-medium' : 'text-slate-600'"
+                  >
+                    {{ row.interpretasi }}
+                  </p>
                 </td>
               </tr>
             </tbody>
