@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 import { useAuth } from '@/composables/useAuth'
+import { exportToExcel, exportToCsv } from '@/utils/excelExport'
 
 const { isOperatorSatker, userUnitCode } = useAuth()
 
@@ -634,9 +636,15 @@ function saveRowEdit() {
 }
 
 // ========================================================
-// EKSPOR CSV
+// EKSPOR EXCEL & CSV
 // ========================================================
-function exportCapaianCsv() {
+const showExportMenu = ref(false)
+const exportMenuRef = ref<HTMLElement | null>(null)
+onClickOutside(exportMenuRef, () => {
+  showExportMenu.value = false
+})
+
+function getCapaianExportData() {
   const headers = [
     'No',
     'Unit',
@@ -675,48 +683,99 @@ function exportCapaianCsv() {
     for (const r of grp.rows) {
       rows.push([
         counter++,
-        `"${grp.unitName}"`,
-        `"${r.sasaran.replace(/"/g, '""')}"`,
-        `"${r.indikator.replace(/"/g, '""')}"`,
-        `"${r.target}"`,
-        `"${r.jan || '-'}"`,
-        `"${r.feb || '-'}"`,
-        `"${r.mar || '-'}"`,
-        `"${r.rekapTw1 || '-'}"`,
-        `"${(r.keteranganTw1 || '-').replace(/"/g, '""')}"`,
-        `"${r.apr || '-'}"`,
-        `"${r.mei || '-'}"`,
-        `"${r.jun || '-'}"`,
-        `"${r.rekapTw2 || '-'}"`,
-        `"${r.sdSemester1 || '-'}"`,
-        `"${(r.keteranganTw2 || '-').replace(/"/g, '""')}"`,
-        `"${r.jul || '-'}"`,
-        `"${r.agu || '-'}"`,
-        `"${r.sep || '-'}"`,
-        `"${r.rekapTw3 || '-'}"`,
-        `"${r.sdTw3 || '-'}"`,
-        `"${(r.keteranganTw3 || '-').replace(/"/g, '""')}"`,
-        `"${r.okt || '-'}"`,
-        `"${r.nov || '-'}"`,
-        `"${r.des || '-'}"`,
-        `"${r.rekapTw4 || '-'}"`,
-        `"${r.sdTw4 || '-'}"`,
-        `"${(r.keteranganTw4 || '-').replace(/"/g, '""')}"`,
+        grp.unitName,
+        r.sasaran,
+        r.indikator,
+        r.target,
+        r.jan || '-',
+        r.feb || '-',
+        r.mar || '-',
+        r.rekapTw1 || '-',
+        r.keteranganTw1 || '-',
+        r.apr || '-',
+        r.mei || '-',
+        r.jun || '-',
+        r.rekapTw2 || '-',
+        r.sdSemester1 || '-',
+        r.keteranganTw2 || '-',
+        r.jul || '-',
+        r.agu || '-',
+        r.sep || '-',
+        r.rekapTw3 || '-',
+        r.sdTw3 || '-',
+        r.keteranganTw3 || '-',
+        r.okt || '-',
+        r.nov || '-',
+        r.des || '-',
+        r.rekapTw4 || '-',
+        r.sdTw4 || '-',
+        r.keteranganTw4 || '-',
       ])
     }
   }
 
-  const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n')
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.setAttribute('href', url)
   const unitLabel = selectedPkUnit.value === 'ALL' ? 'Semua_Unit' : selectedPkUnit.value
-  link.setAttribute('download', `Capaian_PK_${selectedPkYear.value}_${unitLabel}.csv`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+  const fileName = `Capaian_PK_${selectedPkYear.value}_${unitLabel}`
+
+  const colWidths = [
+    6,  // No
+    12, // Unit
+    45, // Sasaran
+    50, // Indikator
+    14, // Target
+    8,  // Jan
+    8,  // Feb
+    8,  // Mar
+    12, // Rekap TW I
+    35, // Keterangan TW I
+    8,  // Apr
+    8,  // Mei
+    8,  // Jun
+    12, // Rekap TW II
+    14, // s.d. Sem I
+    35, // Keterangan TW II
+    8,  // Jul
+    8,  // Agu
+    8,  // Sep
+    12, // Rekap TW III
+    12, // s.d. TW III
+    35, // Keterangan TW III
+    8,  // Okt
+    8,  // Nov
+    8,  // Des
+    12, // Rekap TW IV
+    12, // s.d. TW IV
+    35, // Keterangan TW IV
+  ]
+
+  return { headers, rows, fileName, colWidths }
+}
+
+function exportCapaianExcel() {
+  const { headers, rows, fileName, colWidths } = getCapaianExportData()
+  const unitTitle = selectedPkUnit.value === 'ALL' ? 'SELURUH UNIT KERJA' : selectedPkUnit.value.toUpperCase()
+
+  exportToExcel({
+    fileName,
+    sheetName: 'Capaian PK',
+    title: `CAPAIAN KINERJA ATAS PERJANJIAN KINERJA (PK) TAHUN ${selectedPkYear.value}`,
+    subtitle: `Kantor Wilayah Kementerian Hukum dan HAM Kalimantan Selatan — Unit: ${unitTitle}`,
+    headers,
+    rows,
+    colWidths,
+  })
+
+  triggerToast('Capaian PK berhasil diekspor ke Excel (.xlsx)!')
+}
+
+function exportCapaianCsv() {
+  const { headers, rows, fileName } = getCapaianExportData()
+
+  exportToCsv({
+    fileName,
+    headers,
+    rows,
+  })
 
   triggerToast('Capaian PK berhasil diekspor ke CSV!')
 }
@@ -796,14 +855,65 @@ function triggerToast(msg: string) {
           </div>
         </div>
 
-        <!-- Tombol Ekspor CSV -->
-        <button
-          type="button"
-          @click="exportCapaianCsv"
-          class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg px-3.5 py-2 cursor-pointer transition-colors shadow-2xs active:scale-95"
-        >
-          Ekspor CSV
-        </button>
+        <!-- Tombol Ekspor (Excel & CSV) -->
+        <div ref="exportMenuRef" class="relative inline-flex items-center">
+          <div class="inline-flex rounded-lg shadow-2xs">
+            <button
+              type="button"
+              @click="exportCapaianExcel"
+              class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-l-lg pl-3 pr-2.5 py-2 cursor-pointer transition-colors inline-flex items-center gap-1.5 active:scale-95 border-r-0"
+              title="Ekspor ke format Excel (.xlsx)"
+            >
+              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Ekspor Excel</span>
+            </button>
+            <button
+              type="button"
+              @click="showExportMenu = !showExportMenu"
+              class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-r-lg px-2 py-2 cursor-pointer transition-colors inline-flex items-center active:scale-95"
+              title="Pilih format ekspor"
+            >
+              <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Dropdown Options -->
+          <div
+            v-if="showExportMenu"
+            class="absolute right-0 top-full mt-1.5 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50 animate-scale-in"
+          >
+            <button
+              type="button"
+              @click="exportCapaianExcel(); showExportMenu = false"
+              class="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <span class="w-6 h-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                XLS
+              </span>
+              <div>
+                <span class="font-bold text-slate-800 block">Ekspor Excel (.xlsx)</span>
+                <span class="text-[10px] text-slate-400 block">Rapi, kolom terpisah siap edit</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              @click="exportCapaianCsv(); showExportMenu = false"
+              class="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer border-t border-slate-100"
+            >
+              <span class="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                CSV
+              </span>
+              <div>
+                <span class="font-bold text-slate-800 block">Ekspor CSV (.csv)</span>
+                <span class="text-[10px] text-slate-400 block">Format teks kompatibel Excel</span>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 

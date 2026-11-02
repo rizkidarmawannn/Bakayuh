@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { onClickOutside } from '@vueuse/core'
 import { useAuth } from '@/composables/useAuth'
+import { exportToExcel, exportToCsv } from '@/utils/excelExport'
 
 const route = useRoute()
 const { isOperatorSatker, userUnitCode } = useAuth()
+
+const showExportMenu = ref(false)
+const exportMenuRef = ref<HTMLElement | null>(null)
+onClickOutside(exportMenuRef, () => {
+  showExportMenu.value = false
+})
 
 const selectedUnit = ref('ALL')
 const unitOptions = [
@@ -162,9 +170,9 @@ const filteredSasaranGroups = computed(() => {
 })
 
 // ========================================================
-// EKSPOR REKAP (CSV)
+// EKSPOR REKAP (EXCEL & CSV)
 // ========================================================
-function exportSasaranCsv() {
+function getSasaranExportData() {
   const headers = [
     'No',
     'Unit Kerja',
@@ -183,28 +191,48 @@ function exportSasaranCsv() {
       for (const ikk of sk.ikkList) {
         rows.push([
           counter++,
-          `"${group.unitKode}"`,
-          `"${sk.skKode}"`,
-          `"${sk.skNama.replace(/"/g, '""')}"`,
-          `"${ikk.ikkKode}"`,
-          `"${ikk.ikkNama.replace(/"/g, '""')}"`,
-          `"${ikk.status}"`,
+          group.unitKode,
+          sk.skKode,
+          sk.skNama,
+          ikk.ikkKode,
+          ikk.ikkNama,
+          ikk.status,
         ])
       }
     }
   }
 
-  const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n')
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.setAttribute('href', url)
   const unitLabel = selectedUnit.value === 'ALL' ? 'Semua_Unit' : selectedUnit.value
-  link.setAttribute('download', `Rekap_Sasaran_Renaksi_${unitLabel}_2026.csv`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+  const fileName = `Rekap_Sasaran_Renaksi_${unitLabel}_2026`
+  const colWidths = [6, 14, 14, 45, 16, 50, 18]
+
+  return { headers, rows, fileName, colWidths }
+}
+
+function exportSasaranExcel() {
+  const { headers, rows, fileName, colWidths } = getSasaranExportData()
+  const unitTitle = selectedUnit.value === 'ALL' ? 'SELURUH UNIT' : selectedUnit.value.toUpperCase()
+
+  exportToExcel({
+    fileName,
+    sheetName: 'Sasaran Renaksi',
+    title: `REKAPITULASI SASARAN & RENCANA AKSI (RENAKSI) TAHUN 2026`,
+    subtitle: `Unit Kerja: ${unitTitle} — Kanwil Kemenkumham Kalsel`,
+    headers,
+    rows,
+    colWidths,
+  })
+
+  triggerToast('Rekap Sasaran & Renaksi berhasil diekspor ke Excel (.xlsx)!')
+}
+
+function exportSasaranCsv() {
+  const { headers, rows, fileName } = getSasaranExportData()
+  exportToCsv({
+    fileName,
+    headers,
+    rows,
+  })
 
   triggerToast('Rekap Sasaran & Renaksi berhasil diekspor ke CSV!')
 }
@@ -383,14 +411,64 @@ function triggerToast(msg: string) {
           </div>
         </div>
 
-        <!-- Tombol Ekspor Rekap (CSV) -->
-        <button
-          type="button"
-          @click="exportSasaranCsv"
-          class="btn-secondary text-xs py-2 px-3.5 cursor-pointer shadow-xs active:scale-95 transition-all"
-        >
-          Ekspor Rekap (CSV)
-        </button>
+        <!-- Tombol Ekspor Rekap (Excel & CSV) -->
+        <div ref="exportMenuRef" class="relative inline-flex items-center">
+          <div class="inline-flex rounded-lg shadow-2xs">
+            <button
+              type="button"
+              @click="exportSasaranExcel"
+              class="btn-secondary text-xs py-2 pl-3 pr-2.5 cursor-pointer shadow-xs active:scale-95 transition-all rounded-r-none border-r-0 inline-flex items-center gap-1.5"
+              title="Ekspor ke Excel (.xlsx)"
+            >
+              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Ekspor Excel</span>
+            </button>
+            <button
+              type="button"
+              @click="showExportMenu = !showExportMenu"
+              class="btn-secondary text-xs py-2 px-2 cursor-pointer shadow-xs active:scale-95 transition-all rounded-l-none inline-flex items-center"
+              title="Pilih format"
+            >
+              <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          <div
+            v-if="showExportMenu"
+            class="absolute right-0 top-full mt-1.5 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50 animate-scale-in"
+          >
+            <button
+              type="button"
+              @click="exportSasaranExcel(); showExportMenu = false"
+              class="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <span class="w-6 h-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                XLS
+              </span>
+              <div>
+                <span class="font-bold text-slate-800 block">Ekspor Excel (.xlsx)</span>
+                <span class="text-[10px] text-slate-400 block">Rapi, siap diedit di Excel</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              @click="exportSasaranCsv(); showExportMenu = false"
+              class="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer border-t border-slate-100"
+            >
+              <span class="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                CSV
+              </span>
+              <div>
+                <span class="font-bold text-slate-800 block">Ekspor CSV (.csv)</span>
+                <span class="text-[10px] text-slate-400 block">Format teks kompatibel Excel</span>
+              </div>
+            </button>
+          </div>
+        </div>
 
         <!-- Tombol + Sasaran -->
         <button

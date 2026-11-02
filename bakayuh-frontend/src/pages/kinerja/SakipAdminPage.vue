@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 import { useToast } from '@/composables/useToast'
+import { exportToExcel, exportToCsv } from '@/utils/excelExport'
 
 const { success: toastSuccess, error: toastError } = useToast()
+
+const showExportMenu = ref(false)
+const exportMenuRef = ref<HTMLElement | null>(null)
+onClickOutside(exportMenuRef, () => {
+  showExportMenu.value = false
+})
 
 const selectedYear = ref(2026)
 const yearOptions = [2026, 2025, 2024, 2023]
@@ -279,38 +287,58 @@ function saveNilai() {
   toastSuccess('Berhasil', 'Nilai SAKIP berhasil disimpan.')
 }
 
-// Export CSV
-function exportCsv() {
+// ==========================================
+// EKSPOR EXCEL & CSV
+// ==========================================
+function getSakipExportData() {
   const headers = ['No', 'Komponen', 'Nilai Mandiri', 'Nilai Pembina', 'Nilai Itjen', 'Nilai Panel']
-  const rows = components.value.map((c, idx) => {
+  const rows: (string | number)[][] = components.value.map((c, idx) => {
     const row = currentYearData.value[c.id] || { mandiri: '-', pembina: '-', itjen: '-', panel: '-' }
     return [
       idx + 1,
-      `"${c.name}"`,
-      `"${row.mandiri || '-'}"`,
-      `"${row.pembina || '-'}"`,
-      `"${row.itjen || '-'}"`,
-      `"${row.panel || '-'}"`,
+      c.name,
+      row.mandiri || '-',
+      row.pembina || '-',
+      row.itjen || '-',
+      row.panel || '-',
     ]
   })
   rows.push([
     '',
-    '"Total"',
-    `"${totalMandiri.value}"`,
-    `"${totalPembina.value}"`,
-    `"${totalItjen.value}"`,
-    `"${totalPanel.value}"`,
+    'Total',
+    totalMandiri.value,
+    totalPembina.value,
+    totalItjen.value,
+    totalPanel.value,
   ])
 
-  const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n')
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.setAttribute('href', url)
-  link.setAttribute('download', `SAKIP_${selectedYear.value}.csv`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+  const fileName = `SAKIP_${selectedYear.value}`
+  const colWidths = [6, 40, 16, 16, 16, 16]
+
+  return { headers, rows, fileName, colWidths }
+}
+
+function exportExcel() {
+  const { headers, rows, fileName, colWidths } = getSakipExportData()
+  exportToExcel({
+    fileName,
+    sheetName: 'SAKIP',
+    title: `SISTEM AKUNTABILITAS KINERJA INSTANSI PEMERINTAH (SAKIP) TAHUN ${selectedYear.value}`,
+    subtitle: `Kantor Wilayah Kementerian Hukum dan HAM Kalimantan Selatan`,
+    headers,
+    rows,
+    colWidths,
+  })
+  toastSuccess('Berhasil', 'Data SAKIP berhasil diekspor ke Excel (.xlsx).')
+}
+
+function exportCsv() {
+  const { headers, rows, fileName } = getSakipExportData()
+  exportToCsv({
+    fileName,
+    headers,
+    rows,
+  })
   toastSuccess('Berhasil', 'Data SAKIP berhasil diekspor ke CSV.')
 }
 
@@ -395,14 +423,64 @@ onMounted(() => {
           Atur Judul &amp; Bobot
         </button>
 
-        <!-- Button: Ekspor CSV -->
-        <button
-          type="button"
-          @click="exportCsv"
-          class="bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 shadow-2xs hover:border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
-        >
-          Ekspor CSV
-        </button>
+        <!-- Button: Ekspor (Excel & CSV) -->
+        <div ref="exportMenuRef" class="relative inline-flex items-center">
+          <div class="inline-flex rounded-lg shadow-2xs">
+            <button
+              type="button"
+              @click="exportExcel"
+              class="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-l-lg pl-3 pr-2 py-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 border-r-0"
+              title="Ekspor ke Excel (.xlsx)"
+            >
+              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Ekspor Excel</span>
+            </button>
+            <button
+              type="button"
+              @click="showExportMenu = !showExportMenu"
+              class="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-r-lg px-2 py-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer inline-flex items-center"
+              title="Pilih format"
+            >
+              <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          <div
+            v-if="showExportMenu"
+            class="absolute right-0 top-full mt-1.5 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50 animate-scale-in"
+          >
+            <button
+              type="button"
+              @click="exportExcel(); showExportMenu = false"
+              class="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <span class="w-6 h-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                XLS
+              </span>
+              <div>
+                <span class="font-bold text-slate-800 block">Ekspor Excel (.xlsx)</span>
+                <span class="text-[10px] text-slate-400 block">Rapi, siap diedit di Excel</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              @click="exportCsv(); showExportMenu = false"
+              class="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer border-t border-slate-100"
+            >
+              <span class="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                CSV
+              </span>
+              <div>
+                <span class="font-bold text-slate-800 block">Ekspor CSV (.csv)</span>
+                <span class="text-[10px] text-slate-400 block">Format teks kompatibel Excel</span>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
