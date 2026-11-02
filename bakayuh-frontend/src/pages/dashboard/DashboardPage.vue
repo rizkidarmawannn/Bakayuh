@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { apiClient } from '@/composables/useApi'
 import { useAuth } from '@/composables/useAuth'
@@ -370,6 +370,13 @@ const quickModules = [
     iconColor: 'bg-amber-50 text-amber-700 border-amber-200',
     icon: 'cash',
   },
+  {
+    title: 'SAKIP',
+    desc: 'Akuntabilitas kinerja',
+    to: '/sakip',
+    iconColor: 'bg-purple-50 text-purple-700 border-purple-200',
+    icon: 'award',
+  },
 ]
 
 // Renaksi Triwulan state for right panel
@@ -534,10 +541,184 @@ const ikpaSeptemberUnits = [
   { name: 'BSK', score: 95.54, scoreLabel: '95,54', color: 'bg-amber-500' },
 ]
 
+// Data SAKIP 2026 (PermenPAN-RB No. 88 Tahun 2021)
+interface SakipDashboardComponent {
+  name: string
+  bobot: number
+  score: number
+  percent: number
+  scoreLabel: string
+  color: string
+}
+
+interface SakipDashboardSummary {
+  scoreNum: number
+  scoreLabel: string
+  predikat: string
+  kategori: string
+  interpretasi: string
+  sumberLabel: string
+  badgeClass: string
+  components: SakipDashboardComponent[]
+}
+
+const sakipSummary = ref<SakipDashboardSummary>({
+  scoreNum: 82.47,
+  scoreLabel: '82,47',
+  predikat: 'A',
+  kategori: 'Memuaskan',
+  interpretasi:
+    'Terdapat gambaran bahwa instansi pemerintah/unit kerja dapat memimpin perubahan dalam mewujudkan pemerintahan berorientasi hasil.',
+  sumberLabel: 'Nilai Itjen',
+  badgeClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+  components: [
+    { name: 'Perencanaan Kinerja', bobot: 30, score: 24.6, percent: 82, scoreLabel: '24,60', color: 'bg-indigo-500' },
+    { name: 'Pengukuran Kinerja', bobot: 30, score: 26.1, percent: 87, scoreLabel: '26,10', color: 'bg-blue-600' },
+    { name: 'Pelaporan Kinerja', bobot: 15, score: 12.3, percent: 82, scoreLabel: '12,30', color: 'bg-emerald-500' },
+    { name: 'Evaluasi Internal', bobot: 25, score: 19.47, percent: 78, scoreLabel: '19,47', color: 'bg-purple-600' },
+  ],
+})
+
+function loadSakipDashboard() {
+  try {
+    const raw = localStorage.getItem('bakayuh_sakip_store_v1')
+    if (!raw) return
+    const parsed = JSON.parse(raw)
+    const data2026 = parsed?.database?.['2026']
+    if (!data2026) return
+
+    const comps = parsed.components || [
+      { id: 'perencanaan', name: 'PERENCANAAN', bobot: 30 },
+      { id: 'pengukuran', name: 'PENGUKURAN', bobot: 30 },
+      { id: 'pelaporan', name: 'PELAPORAN', bobot: 15 },
+      { id: 'evaluasi', name: 'EVALUASI AKUNTABILITAS KINERJA INTERNAL', bobot: 25 },
+    ]
+
+    function parseVal(v: any): number | null {
+      if (v === null || v === undefined) return null
+      const s = String(v).trim()
+      if (s === '' || s === '-') return null
+      const num = parseFloat(s.replace(',', '.'))
+      return isNaN(num) ? null : num
+    }
+
+    let sumItjen = 0
+    let sumPanel = 0
+    let sumPembina = 0
+    let sumMandiri = 0
+    let hasItjen = false
+    let hasPanel = false
+    let hasPembina = false
+    let hasMandiri = false
+
+    const defaultColors = ['bg-indigo-500', 'bg-blue-600', 'bg-emerald-500', 'bg-purple-600', 'bg-amber-500']
+    const compList: SakipDashboardComponent[] = []
+
+    comps.forEach((c: any, idx: number) => {
+      const row = data2026[c.id] || {}
+      const valPanel = parseVal(row.panel)
+      const valItjen = parseVal(row.itjen)
+      const valPembina = parseVal(row.pembina)
+      const valMandiri = parseVal(row.mandiri)
+
+      if (valPanel !== null) { hasPanel = true; sumPanel += valPanel }
+      if (valItjen !== null) { hasItjen = true; sumItjen += valItjen }
+      if (valPembina !== null) { hasPembina = true; sumPembina += valPembina }
+      if (valMandiri !== null) { hasMandiri = true; sumMandiri += valMandiri }
+
+      const actualScore = valPanel ?? valItjen ?? valPembina ?? valMandiri ?? 0
+      const bobot = Number(c.bobot) || 25
+      const pct = bobot > 0 ? Math.min(100, Math.round((actualScore / bobot) * 100)) : 0
+
+      let displayName = c.name
+      if (c.id === 'perencanaan') displayName = 'Perencanaan Kinerja'
+      else if (c.id === 'pengukuran') displayName = 'Pengukuran Kinerja'
+      else if (c.id === 'pelaporan') displayName = 'Pelaporan Kinerja'
+      else if (c.id === 'evaluasi') displayName = 'Evaluasi Internal'
+
+      compList.push({
+        name: displayName,
+        bobot,
+        score: actualScore,
+        percent: pct,
+        scoreLabel: actualScore.toFixed(2).replace('.', ','),
+        color: defaultColors[idx % defaultColors.length] || 'bg-purple-600',
+      })
+    })
+
+    let finalScore = 0
+    let sumber = 'Belum Dinilai'
+    if (hasPanel) {
+      finalScore = sumPanel
+      sumber = 'Nilai Panel'
+    } else if (hasItjen) {
+      finalScore = sumItjen
+      sumber = 'Nilai Itjen'
+    } else if (hasPembina) {
+      finalScore = sumPembina
+      sumber = 'Nilai Pembina'
+    } else if (hasMandiri) {
+      finalScore = sumMandiri
+      sumber = 'Nilai Mandiri'
+    }
+
+    let predikat = 'D'
+    let kategori = 'Sangat Kurang'
+    let interpretasi = 'Sistem dan tatanan dalam AKIP sama sekali tidak dapat diandalkan.'
+    let badgeClass = 'bg-rose-100 text-rose-800 border border-rose-200'
+
+    if (finalScore > 90) {
+      predikat = 'AA'
+      kategori = 'Sangat Memuaskan'
+      interpretasi = 'Telah terwujud Good Governance. Seluruh kinerja dikelola dengan sangat memuaskan di seluruh unit kerja.'
+      badgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+    } else if (finalScore > 80) {
+      predikat = 'A'
+      kategori = 'Memuaskan'
+      interpretasi = 'Terdapat gambaran bahwa instansi pemerintah/unit kerja dapat memimpin perubahan dalam mewujudkan pemerintahan berorientasi hasil.'
+      badgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+    } else if (finalScore > 70) {
+      predikat = 'BB'
+      kategori = 'Sangat Baik'
+      interpretasi = 'Terdapat gambaran bahwa AKIP sangat baik pada 2/3 unit kerja dengan efisiensi anggaran dan manajemen kinerja andal.'
+      badgeClass = 'bg-blue-100 text-blue-800 border border-blue-200'
+    } else if (finalScore > 60) {
+      predikat = 'B'
+      kategori = 'Baik'
+      interpretasi = 'Terdapat gambaran bahwa AKIP sudah baik pada 1/3 unit kerja, terlihat masih perlu sedikit perbaikan.'
+      badgeClass = 'bg-sky-100 text-sky-800 border border-sky-200'
+    } else if (finalScore > 50) {
+      predikat = 'CC'
+      kategori = 'Cukup (Memadai)'
+      interpretasi = 'Terdapat gambaran bahwa AKIP cukup baik namun masih perlu banyak perbaikan.'
+      badgeClass = 'bg-amber-100 text-amber-800 border border-amber-200'
+    } else if (finalScore > 30) {
+      predikat = 'C'
+      kategori = 'Kurang'
+      interpretasi = 'Sistem dan tatanan dalam AKIP kurang dapat diandalkan. Belum terimplementasi sistem manajemen kinerja.'
+      badgeClass = 'bg-orange-100 text-orange-800 border border-orange-200'
+    }
+
+    sakipSummary.value = {
+      scoreNum: finalScore,
+      scoreLabel: finalScore.toFixed(2).replace('.', ','),
+      predikat,
+      kategori,
+      interpretasi,
+      sumberLabel: sumber,
+      badgeClass,
+      components: compList,
+    }
+  } catch (e) {
+    console.error('Failed to load SAKIP data on dashboard:', e)
+  }
+}
+
 async function loadData() {
   loading.value = true
   error.value = null
   try {
+    loadSakipDashboard()
     const resTahun = await apiClient.get<{ data: TahunAnggaran[] }>('/tahun-anggaran')
     tahuns.value = resTahun.data.data
     const aktif = tahuns.value.find((t) => t.is_aktif)
@@ -556,6 +737,12 @@ async function loadData() {
 
 onMounted(() => {
   loadData()
+  loadSakipDashboard()
+  window.addEventListener('storage', loadSakipDashboard)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('storage', loadSakipDashboard)
 })
 </script>
 
@@ -988,7 +1175,7 @@ onMounted(() => {
     <!-- ========================================================================= -->
     <template v-else>
       <!-- 1. Top Quick Module Shortcuts (Zero Emojis, Pure SVG Icons) -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4">
         <RouterLink
           v-for="item in quickModules"
           :key="item.title"
@@ -1019,6 +1206,10 @@ onMounted(() => {
             <svg v-else-if="item.icon === 'cash'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
+            <!-- Award / SAKIP -->
+            <svg v-else-if="item.icon === 'award'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
           </div>
           <div class="flex flex-col min-w-0">
             <span class="font-bold text-xs sm:text-sm text-slate-800 leading-snug group-hover:text-blue-600 transition-colors truncate">
@@ -1031,8 +1222,8 @@ onMounted(() => {
         </RouterLink>
       </div>
 
-      <!-- 2. 5 Executive Metric Summary Cards for Admin -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+      <!-- 2. 6 Executive Metric Summary Cards for Admin -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4">
         <!-- Card 1: Menunggu verifikasi -->
         <RouterLink
           to="/verifikasi"
@@ -1097,12 +1288,34 @@ onMounted(() => {
         <!-- Card 5: IKPA September 2026 -->
         <RouterLink
           to="/ikpa"
-          class="bg-white rounded-2xl p-5 border-l-4 border-l-[#0B2A6F] border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between col-span-2 sm:col-span-1 group"
+          class="bg-white rounded-2xl p-5 border-l-4 border-l-[#0B2A6F] border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
         >
           <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">96,49</span>
           <div class="mt-3">
             <span class="text-xs sm:text-sm font-bold text-slate-800 block">IKPA September 2026</span>
             <span class="text-[11px] text-slate-400 font-normal block mt-0.5">rata-rata Nilai Akhir</span>
+          </div>
+        </RouterLink>
+
+        <!-- Card 6: SAKIP 2026 -->
+        <RouterLink
+          to="/sakip"
+          class="bg-white rounded-2xl p-5 border-l-4 border-l-purple-600 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between group"
+        >
+          <div class="flex items-baseline justify-between">
+            <span class="text-3xl sm:text-4xl font-black text-[#0B2A6F]">{{ sakipSummary.scoreLabel }}</span>
+            <span
+              class="inline-flex items-center justify-center px-2 py-0.5 rounded-md text-xs font-bold font-mono tracking-wide"
+              :class="sakipSummary.badgeClass"
+            >
+              {{ sakipSummary.predikat }}
+            </span>
+          </div>
+          <div class="mt-3">
+            <span class="text-xs sm:text-sm font-bold text-slate-800 block">SAKIP 2026</span>
+            <span class="text-[11px] text-purple-700 font-medium block mt-0.5 truncate">
+              {{ sakipSummary.kategori }} • {{ sakipSummary.sumberLabel }}
+            </span>
           </div>
         </RouterLink>
       </div>
@@ -1552,6 +1765,90 @@ onMounted(() => {
                 Sep 26
               </text>
             </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. SAKIP 2026 — Akuntabilitas Kinerja (Admin Only) -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 sm:p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-4 rounded-full bg-purple-600" />
+            <h2 class="text-base sm:text-lg font-bold text-[#0B2A6F]">
+              SAKIP 2026 &mdash; Akuntabilitas Kinerja
+            </h2>
+            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+              PermenPAN-RB No. 88/2021
+            </span>
+          </div>
+          <RouterLink
+            to="/sakip"
+            class="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-700 hover:underline flex items-center gap-1 group"
+          >
+            <span>Ke Halaman SAKIP</span>
+            <span class="transition-transform group-hover:translate-x-0.5">&rarr;</span>
+          </RouterLink>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          <!-- 1. Left Score & Predikat Badge (md:col-span-4) -->
+          <div class="md:col-span-4 flex flex-col items-center justify-center p-5 rounded-2xl bg-gradient-to-b from-purple-50/60 to-slate-50/40 border border-purple-100 text-center">
+            <span class="text-xs font-semibold text-purple-700 uppercase tracking-wider mb-1">
+              Nilai Akhir SAKIP ({{ sakipSummary.sumberLabel }})
+            </span>
+            <div class="flex items-center justify-center gap-3 my-1">
+              <span class="text-4xl sm:text-5xl font-black text-[#0B2A6F] font-mono tracking-tight">
+                {{ sakipSummary.scoreLabel }}
+              </span>
+              <span
+                class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-lg font-black font-mono shadow-xs"
+                :class="sakipSummary.badgeClass"
+              >
+                {{ sakipSummary.predikat }}
+              </span>
+            </div>
+            <span class="text-sm font-bold text-slate-800 mt-1">
+              Predikat {{ sakipSummary.predikat }} &mdash; {{ sakipSummary.kategori }}
+            </span>
+            <p class="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed line-clamp-3">
+              {{ sakipSummary.interpretasi }}
+            </p>
+          </div>
+
+          <!-- 2. Middle & Right: Komponen SAKIP Progress Bars (md:col-span-8) -->
+          <div class="md:col-span-8 space-y-3.5">
+            <div
+              v-for="comp in sakipSummary.components"
+              :key="comp.name"
+              class="bg-slate-50/70 border border-slate-100 rounded-xl p-3 sm:p-3.5"
+            >
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs sm:text-sm font-bold text-slate-800">
+                    {{ comp.name }}
+                  </span>
+                  <span class="text-[11px] font-medium text-slate-400">
+                    (Bobot {{ comp.bobot }}%)
+                  </span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-mono font-bold text-[#0B2A6F]">
+                    {{ comp.scoreLabel }} / {{ comp.bobot }}
+                  </span>
+                  <span class="text-[11px] font-mono font-semibold text-slate-500 w-9 text-right">
+                    {{ comp.percent }}%
+                  </span>
+                </div>
+              </div>
+              <div class="w-full h-2.5 rounded-full bg-slate-200/80 overflow-hidden">
+                <div
+                  class="h-full rounded-full transition-all duration-500"
+                  :class="comp.color"
+                  :style="{ width: comp.percent + '%' }"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
