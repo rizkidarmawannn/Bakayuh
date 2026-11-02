@@ -1330,25 +1330,25 @@ onUnmounted(() => {
       </div>
 
       <!-- 5 Horizontal Metric Summary Cards Floating Across Hero -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mt-8 pt-2 relative z-10">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 mt-8 pt-2 relative z-10">
         <!-- 1. Renaksi diterima -->
         <div
           role="button"
           tabindex="0"
           @click="setTab('renaksi')"
-          class="bg-white rounded-2xl p-3.5 sm:p-4 lg:p-3.5 xl:p-5 shadow-lg border border-slate-100 flex items-center gap-2.5 sm:gap-3 xl:gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+          class="bg-white rounded-2xl p-4 sm:p-5 lg:p-3.5 xl:p-5 shadow-lg border border-slate-100 flex items-center gap-4 lg:gap-3 xl:gap-4 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
         >
-          <div class="relative w-11 h-11 sm:w-12 sm:h-12 xl:w-14 xl:h-14 flex-shrink-0 flex items-center justify-center">
+          <div class="relative w-14 h-14 lg:w-12 lg:h-12 xl:w-14 xl:h-14 flex-shrink-0 flex items-center justify-center">
             <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
               <circle cx="24" cy="24" r="19" stroke="#E2E8F0" stroke-width="4.5" fill="none" />
             </svg>
             <span class="absolute inset-0 flex items-center justify-center font-bold text-xs text-slate-800">0%</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors">
+            <span class="font-bold text-[#0B2A6F] text-sm sm:text-base leading-snug group-hover:text-blue-600 transition-colors">
               Renaksi diterima
             </span>
-            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5">TW 4 &bull; 0 dari 0</span>
+            <span class="text-xs text-slate-500 mt-0.5">TW 4 &bull; 0 dari 0</span>
           </div>
         </div>
 
@@ -1357,69 +1357,69 @@ onUnmounted(() => {
           role="button"
           tabindex="0"
           @click="setTab('iku')"
-          class="bg-white rounded-2xl p-3.5 sm:p-4 lg:p-3.5 xl:p-5 shadow-lg border border-slate-100 flex items-center gap-2.5 sm:gap-3 xl:gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+          class="bg-white rounded-2xl p-4 sm:p-5 lg:p-3.5 xl:p-5 shadow-lg border border-slate-100 flex items-center gap-4 lg:gap-3 xl:gap-4 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
         >
-          <div class="relative w-11 h-11 sm:w-12 sm:h-12 xl:w-14 xl:h-14 flex-shrink-0 flex items-center justify-center">
+          <div class="relative w-14 h-14 lg:w-12 lg:h-12 xl:w-14 xl:h-14 flex-shrink-0 flex items-center justify-center">
             <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
               <circle cx="24" cy="24" r="19" stroke="#E2E8F0" stroke-width="4.5" fill="none" />
               <circle
                 cx="24"
                 cy="24"
                 r="19"
-                stroke="#10B981"
+                stroke="#1D4ED8"
                 stroke-width="4.5"
                 fill="none"
+                stroke-linecap="round"
                 stroke-dasharray="119.38"
                 stroke-dashoffset="102.67"
-                stroke-linecap="round"
               />
             </svg>
             <span class="absolute inset-0 flex items-center justify-center font-bold text-xs text-slate-800">14%</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors">
+            <span class="font-bold text-[#0B2A6F] text-sm sm:text-base leading-snug group-hover:text-blue-600 transition-colors">
               Capaian PK terisi
             </span>
-            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5">2 dari 14 (2026)</span>
+            <span class="text-xs text-slate-500 mt-0.5">2 dari 14 indikator (2026)</span>
           </div>
         </div>
 
-        <!-- 3. Laporan diterima -->
+        <!-- 3. Nilai IKPA -->
+        <div
+          role="button"
+          tabindex="0"
+          @click="setTab('ikpa')"
+          class="bg-white rounded-2xl p-4 sm:p-5 lg:p-3.5 xl:p-5 shadow-lg border border-slate-100 flex items-center gap-4 lg:gap-3 xl:gap-4 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+        >
+          <div class="flex-shrink-0 flex items-center justify-center">
+            <span class="text-2xl sm:text-3xl font-black text-[#0B2A6F] tracking-tight">96,49</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="font-bold text-[#0B2A6F] text-sm sm:text-base leading-snug group-hover:text-blue-600 transition-colors">
+              Nilai IKPA
+            </span>
+            <span class="text-xs text-slate-500 mt-0.5">rata-rata September 2026</span>
+          </div>
+        </div>
+
+        <!-- 4. Laporan diterima -->
         <div
           role="button"
           tabindex="0"
           @click="setTab('laporan')"
-          class="bg-white rounded-2xl p-3.5 sm:p-4 lg:p-3.5 xl:p-5 shadow-lg border border-slate-100 flex items-center gap-2.5 sm:gap-3 xl:gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
+          class="bg-white rounded-2xl p-4 sm:p-5 lg:p-3.5 xl:p-5 shadow-lg border border-slate-100 flex items-center gap-4 lg:gap-3 xl:gap-4 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
         >
-          <div class="relative w-11 h-11 sm:w-12 sm:h-12 xl:w-14 xl:h-14 flex-shrink-0 flex items-center justify-center">
+          <div class="relative w-14 h-14 lg:w-12 lg:h-12 xl:w-14 xl:h-14 flex-shrink-0 flex items-center justify-center">
             <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
               <circle cx="24" cy="24" r="19" stroke="#E2E8F0" stroke-width="4.5" fill="none" />
             </svg>
             <span class="absolute inset-0 flex items-center justify-center font-bold text-xs text-slate-800">0%</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors">
+            <span class="font-bold text-[#0B2A6F] text-sm sm:text-base leading-snug group-hover:text-blue-600 transition-colors">
               Laporan diterima
             </span>
-            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5">0 dari 72 (2026)</span>
-          </div>
-        </div>
-
-        <!-- 4. Nilai IKPA -->
-        <div
-          role="button"
-          tabindex="0"
-          @click="setTab('ikpa')"
-          class="bg-white rounded-2xl p-3.5 sm:p-4 lg:p-3.5 xl:p-5 shadow-lg border border-slate-100 flex items-center gap-2.5 sm:gap-3 xl:gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none group"
-        >
-          <div class="flex-shrink-0 flex items-center justify-center">
-            <span class="text-2xl xl:text-3xl font-black text-[#0B2A6F] tracking-tight">96,49</span>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors">
-              Nilai IKPA
-            </span>
-            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5">rata-rata Sep 2026</span>
+            <span class="text-xs text-slate-500 mt-0.5">0 dari 72 jatuh tempo (2026)</span>
           </div>
         </div>
 
@@ -1428,16 +1428,16 @@ onUnmounted(() => {
           role="button"
           tabindex="0"
           @click="setTab('sakip')"
-          class="bg-white rounded-2xl p-3.5 sm:p-4 lg:p-3.5 xl:p-5 shadow-lg border border-slate-100 flex items-center gap-2.5 sm:gap-3 xl:gap-3.5 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none col-span-2 sm:col-span-1 group"
+          class="bg-white rounded-2xl p-4 sm:p-5 lg:p-3.5 xl:p-5 shadow-lg border border-slate-100 flex items-center gap-4 lg:gap-3 xl:gap-4 text-slate-800 transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer select-none col-span-1 sm:col-span-2 md:col-span-1 lg:col-span-1 group"
         >
           <div class="flex-shrink-0 flex items-center justify-center">
-            <span class="text-2xl xl:text-3xl font-black text-[#0B2A6F] tracking-tight">{{ publicSakipSummary.scoreLabel }}</span>
+            <span class="text-2xl sm:text-3xl font-black text-[#0B2A6F] tracking-tight">{{ publicSakipSummary.scoreLabel }}</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="font-bold text-[#0B2A6F] text-xs sm:text-sm lg:text-base leading-snug group-hover:text-blue-600 transition-colors">
+            <span class="font-bold text-[#0B2A6F] text-sm sm:text-base leading-snug group-hover:text-blue-600 transition-colors">
               Nilai SAKIP
             </span>
-            <span class="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+            <span class="text-xs text-slate-500 mt-0.5">
               Predikat {{ publicSakipSummary.predikat }} &bull; {{ publicSakipSummary.kategori }}
             </span>
           </div>
