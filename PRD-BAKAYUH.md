@@ -180,6 +180,29 @@ Aplikasi BAKAYUH terbagi ke dalam **2 Pilar Utama** plus **Modul Pendukung & Por
 - Manajemen Pengguna oleh Super Admin (`AUTH-5`).
 - Manajemen Satker (Kanwil, Lapas, Rutan, Bapas, Kanim, Rupbasan, BHP), Tahun Anggaran, Indikator Kinerja, dan Area RB.
 
+### 4.3.4 Pusat Notifikasi Terpadu (Header Notification Center)
+- **Penempatan:** Pojok kanan atas (*Top Right Header*) pada bar institusi universal (`AppHeader.vue`).
+- **Ikon Kustom Institusi:** Tombol lonceng emas (*gold bell icon*) dengan badge penghitung notifikasi baru belum dibaca (*unread count badge*) dan animasi pulse.
+- **Panel Dropdown Responsif:**
+  - Penanda identitas peran aktif (*badge role/satker*).
+  - Aksi cepat *Tandai Semua Dibaca* dan *Hapus Riwayat*.
+  - Tab filter multi-kategori: *Semua*, *Belum Dibaca*, *Tenggat Waktu*, dan *Verifikasi*.
+  - Aksi klik kartu notifikasi: otomatis menandai terbaca dan mengarahkan langsung ke halaman kerja terkait (*deep-link* ke `/laporan` atau `/laporan/verifikasi`).
+- **Diferensiasi Informasi Notifikasi Berbasis Peran:**
+  - **Operator Satker:**
+    - *Mendekati Waktu Tenggat:* Peringatan countdown sisa hari jelang batas akhir pelaporan berkala (contoh: batas tanggal 10 bulan berikutnya).
+    - *Melewati Masa Tenggat (Terlambat):* Peringatan kepatuhan laporan unit yang terlambat diunggah.
+    - *Laporan Ditolak / Perlu Perbaikan:* Notifikasi pengembalian berkas laporan lengkap dengan catatan revisi verifikator dalam kotak kutipan khusus.
+    - *Laporan Diterima:* Konfirmasi berkas laporan dan data dukung telah tuntas disetujui Kanwil.
+    - *Isolasi Privasi Unit:* Operator hanya menerima notifikasi yang relevan dengan satuan kerja binaannya (AHU, KI, Setjen, PP, BPHN, BSK).
+  - **Admin Kanwil / Super Admin:**
+    - *Laporan Baru Masuk (Menunggu Verifikasi):* Pemberitahuan instan berkas laporan atau data dukung baru yang diunggah satker.
+    - *Satker Melewati Masa Tenggat:* Rekap peringatan kepatuhan satker mana saja yang terlambat mengumpulkan laporan.
+    - *Menunggu Revisi Satker:* Rekap satker yang berkasnya masih dalam proses perbaikan.
+    - *Pengingat Jadwal Tenggat:* Pengingat jadwal verifikasi dan batas waktu pelaporan seluruh satker.
+    - *Rekap Verifikasi Selesai:* Konfirmasi tuntasnya validasi berkas.
+- **Sinkronisasi Otomatis (*Reactive & Persistent*):** Terintegrasi langsung dengan mutasi pada `useDadukLaporanStore` dan persisten di `localStorage`.
+
 ---
 
 # 5. Kebutuhan Fungsional (Functional Requirements)
@@ -196,6 +219,7 @@ Aplikasi BAKAYUH terbagi ke dalam **2 Pilar Utama** plus **Modul Pendukung & Por
 | **DADUK-1..5**| Daduk | Upload berkas PDF daduk (maks 50MB) sesuai checklist, countdown timer deadline, auto-lock jika terverifikasi, input narasi penjelasan ZI. | **Wajib** |
 | **VERIF-1..3**| Verifikasi | Verifikasi data dukung (Belum Verif, Lengkap, Perlu Perbaikan, Tercapai), thread catatan klarifikasi dua arah, log riwayat catatan verifikasi. | **Wajib** |
 | **DASH-1..4** | Dashboard| Kartu statistik gabungan (IKU, Renaksi, SAKIP, LKE, RKT), grafik interaktif, filter tahun, skeleton loading pada seluruh async state. | **Wajib** |
+| **NOTIF-1..4**| Notifikasi | Pusat notifikasi header dengan ikon lonceng emas kustom, badge unread, filter kategori (Semua, Unread, Tenggat, Verifikasi), peringatan mendekati tenggat & melewati batas, info verifikasi diterima/ditolak perbaikan, dan diferensiasi role (Satker vs Admin). | **Wajib** |
 | **PUBLIK-1..4**| Publik | Portal transparansi publik tanpa login dengan ringkasan agregat kinerja dan RB se-Kalsel. | **Wajib** |
 
 ---
@@ -261,7 +285,15 @@ stateDiagram-v2
   - **Background Bar:** Warna biru dongker institusi Kemenkum (*Navy Blue* misal `#0C2B64` / `#0F2E66`).
   - **Interaktivitas:** Header / Brand Logo bersifat **Clickable** (dapat diklik) yang mengarahkan pengguna kembali ke halaman utama / Dashboard (`router-link to="/"` atau home portal).
 
-### 8.2 Standar Teknis & Arsitektur
+### 8.2 Standar Header Kanan Atas (Top Right Notification & Profile)
+- **Pusat Notifikasi Interaktif:**
+  - **Ikon Lonceng Emas:** Tombol lonceng kustom beraksen warna kuning emas Pengayoman dengan penanda *unread badge* dinamis.
+  - **Panel Notifikasi Berjenjang:** Dropdown popover berisi ringkasan notifikasi tenggat waktu (mendekati & melewati masa tenggat) serta status verifikasi (diterima & perlu perbaikan/ditolak).
+- **User Profile Chip:**
+  - Avatar inisial dengan gradien emas Kemenkum, nama pengguna terotentikasi, dan label satuan kerja / peran.
+  - Akses cepat menuju halaman pengaturan profil (`/profil`).
+
+### 8.3 Standar Teknis & Arsitektur
 - **Tech Stack:** Laravel 11+ (API Backend, Laravel Sanctum Auth), Vue 3 Composition API (`<script setup lang="ts">`), TypeScript, Tailwind CSS, MySQL 8.0, Vite.
 - **UX & Loading:** Wajib menggunakan **Skeleton Loading** di seluruh tabel, kartu metrik, dan grafik saat memuat data dari API.
 - **Batasan File Upload:**

@@ -1,5 +1,4 @@
-import axios, { type AxiosError, type AxiosResponse } from 'axios'
-import { ref } from 'vue'
+import axios, { type AxiosError } from 'axios'
 
 export const apiClient = axios.create({
   baseURL: '/api',

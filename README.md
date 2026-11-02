@@ -40,10 +40,18 @@
 - **LKE ZI (WBK / WBBM):** Instrumen penilaian mandiri 6 Area Perubahan Komponen Pengungkit (Manajemen Perubahan, Penataan Tatalaksana, Penataan Sistem Manajemen SDM, Penguatan Akuntabilitas, Penguatan Pengawasan, Peningkatan Kualitas Pelayanan Publik) serta Komponen Hasil.
 - **RKT RB (B03, B06, B09, B12):** Pelaporan rencana aksi reformasi birokrasi kategori General, Tematik, dan Meso sesuai timeline periode pelaporan Kementerian.
 
-### 4. Portal Publik (Akses Tanpa Login)
+### 4. Pusat Notifikasi Terpadu (Header Notification Center)
+- **Tombol Lonceng Emas Kustom:** Terletak di pojok kanan atas header universal (`AppHeader.vue`) dengan ikon lonceng emas institusi beraksen bayangan lembut dan badge penghitung notifikasi belum dibaca (*unread badge*) beranimasi pulse.
+- **Diferensiasi Informasi Notifikasi (Satker vs. Admin):**
+  - *Operator Satker:* Peringatan laporan yang mendekati waktu tenggat (*countdown* batas waktu), peringatan laporan yang melewati masa tenggat (terlambat), pemberitahuan berkas ditolak/perlu perbaikan (disertai kutipan catatan revisi verifikator Kanwil), serta konfirmasi laporan diterima/disetujui. Notifikasi terisolasi aman per unit kerja masing-masing.
+  - *Admin Kanwil / Super Admin:* Pemberitahuan laporan baru masuk yang siap diverifikasi, peringatan kepatuhan satker mana saja yang melewati masa tenggat, rekap berkas satker yang masih dalam perbaikan, dan pengingat jadwal batas pelaporan seluruh satuan kerja binaan.
+- **Filter Tab Multi-Kategori:** Filter cepat berbasis tab: *Semua*, *Belum Dibaca*, *Tenggat Waktu*, dan *Verifikasi*.
+- **Interaktivitas & Real-Time Sync:** Mengklik kartu notifikasi langsung menandai status terbaca dan melakukan *deep navigation* ke halaman kerja terkait (`/laporan` atau `/laporan/verifikasi`). Terintegrasi langsung dengan mutasi pada `useDadukLaporanStore`.
+
+### 5. Portal Publik (Akses Tanpa Login)
 - Halaman transparansi publik yang menyajikan capaian indikator kinerja, rekapitulasi dokumen SAKIP, progres reformasi birokrasi, dan rekapitulasi rencana aksi secara interaktif tanpa memerlukan autentikasi.
 
-### 5. Manajemen Akun & Hak Akses
+### 6. Manajemen Akun & Hak Akses
 - Pengelolaan pengguna berbasis hak akses bertingkat (Super Admin, Admin Kanwil, Operator Satker, Pimpinan/Viewer).
 - Pengelolaan master data Satker, Tahun Anggaran, dan Indikator Kinerja.
 
@@ -88,8 +96,8 @@ Bakayuh/
 │
 ├── bakayuh-frontend/          # Aplikasi Klien Vue 3 + TypeScript
 │   ├── src/
-│   │   ├── components/        # Komponen antarmuka (Navbar, AppSidebar, Modal, dll.)
-│   │   ├── composables/       # Vue composables (useAuth, useApi, usePagination, useToast)
+│   │   ├── components/        # Komponen antarmuka (Navbar, AppSidebar, NotificationDropdown, dll.)
+│   │   ├── composables/       # Vue composables (useAuth, useApi, useDadukLaporanStore, useNotificationStore)
 │   │   ├── pages/             # Halaman modul (Dashboard, Kinerja, Renaksi, Laporan, Publik, dll.)
 │   │   ├── router/            # Definisi route & route guards
 │   │   ├── stores/            # Pinia stores

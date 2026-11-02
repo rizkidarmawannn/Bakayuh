@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import { useNotificationStore } from '@/composables/useNotificationStore'
 
 export interface DadukSubmission {
   id: string
@@ -479,6 +480,45 @@ export function useDadukLaporanStore() {
     saveSubmissionsToStorage()
     saveMatrixToStorage()
 
+    // Trigger realtime notification
+    try {
+      const notifStore = useNotificationStore()
+      // Notifikasi untuk Admin Kanwil
+      notifStore.addNotification({
+        type: 'menunggu_verifikasi',
+        category: 'verifikasi',
+        title: `Laporan Baru: [${payload.unitKode}] ${payload.jenisLaporan}`,
+        message: `Unit ${payload.unitName} telah mengunggah berkas "${payload.namaFile}" untuk periode ${payload.periode}. Siap untuk diverifikasi oleh Kanwil.`,
+        targetRole: 'admin',
+        linkUrl: '/laporan/verifikasi',
+        read: false,
+        meta: {
+          unitKode: payload.unitKode,
+          unitName: payload.unitName,
+          periode: payload.periode,
+          submissionId: createdOrUpdated.id,
+        },
+      })
+
+      // Notifikasi konfirmasi untuk Operator Satker
+      notifStore.addNotification({
+        type: 'info',
+        category: 'verifikasi',
+        title: `Laporan Terkirim: ${payload.jenisLaporan}`,
+        message: `Berkas "${payload.namaFile}" (${payload.periode}) berhasil dikirimkan dan menunggu verifikasi Kanwil.`,
+        targetRole: 'operator_satker',
+        targetUnit: payload.unitKode,
+        linkUrl: '/laporan',
+        read: false,
+        meta: {
+          unitKode: payload.unitKode,
+          periode: payload.periode,
+        },
+      })
+    } catch (e) {
+      console.warn('Failed to add notification for submission:', e)
+    }
+
     return createdOrUpdated
   }
 
@@ -543,6 +583,76 @@ export function useDadukLaporanStore() {
 
     saveSubmissionsToStorage()
     saveMatrixToStorage()
+
+    // Trigger realtime notification for verification result
+    try {
+      const notifStore = useNotificationStore()
+      if (decision === 'Diterima') {
+        // Notifikasi untuk Satker: Diterima
+        notifStore.addNotification({
+          type: 'diterima',
+          category: 'verifikasi',
+          title: `Laporan Disetujui: ${sub.jenisLaporan} (${sub.periode})`,
+          message: `Verifikator Kanwil telah menerima dan memvalidasi berkas laporan unit Anda.${catatan.trim() ? ' Catatan: "' + catatan.trim() + '"' : ''}`,
+          targetRole: 'operator_satker',
+          targetUnit: sub.unitKode,
+          linkUrl: '/laporan',
+          read: false,
+          meta: {
+            unitKode: sub.unitKode,
+            periode: sub.periode,
+            catatan: catatan.trim(),
+          },
+        })
+        // Notifikasi untuk Admin
+        notifStore.addNotification({
+          type: 'diterima',
+          category: 'verifikasi',
+          title: `Verifikasi Selesai: [${sub.unitKode}] Diterima`,
+          message: `Laporan ${sub.jenisLaporan} (${sub.periode}) unit ${sub.unitName} telah berstatus Diterima.`,
+          targetRole: 'admin',
+          linkUrl: '/laporan/verifikasi',
+          read: false,
+          meta: {
+            unitKode: sub.unitKode,
+            periode: sub.periode,
+          },
+        })
+      } else {
+        // Notifikasi untuk Satker: Perlu Perbaikan (Ditolak)
+        notifStore.addNotification({
+          type: 'ditolak',
+          category: 'verifikasi',
+          title: `Laporan Perlu Perbaikan: ${sub.jenisLaporan} (${sub.periode})`,
+          message: `Verifikator Kanwil mengembalikan berkas pelaporan Anda. Catatan perbaikan: "${catatan.trim() || 'Mohon lengkapi dokumen data dukung sesuai checklist'}"`,
+          targetRole: 'operator_satker',
+          targetUnit: sub.unitKode,
+          linkUrl: '/laporan',
+          read: false,
+          meta: {
+            unitKode: sub.unitKode,
+            periode: sub.periode,
+            catatan: catatan.trim(),
+          },
+        })
+        // Notifikasi untuk Admin
+        notifStore.addNotification({
+          type: 'ditolak',
+          category: 'verifikasi',
+          title: `Catatan Revisi Dikirim ke [${sub.unitKode}]`,
+          message: `Permintaan perbaikan berkas ${sub.jenisLaporan} (${sub.periode}) telah dikirimkan ke operator satker.`,
+          targetRole: 'admin',
+          linkUrl: '/laporan/verifikasi',
+          read: false,
+          meta: {
+            unitKode: sub.unitKode,
+            periode: sub.periode,
+          },
+        })
+      }
+    } catch (e) {
+      console.warn('Failed to add notification for verification:', e)
+    }
 
     return true
   }
